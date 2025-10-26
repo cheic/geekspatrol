@@ -1,35 +1,117 @@
 ---
-import { PRIMARY_NAV, SECONDARY_NAV, buildHref } from '../config/navigation';
+import { PRIMARY_NAV, buildHref } from '../config/navigation';
 ---
 
-<header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 backdrop-blur">
+<header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm">
   <div class="container mx-auto px-4">
-    <div class="flex h-16 items-center justify-between gap-4">
+    <div class="flex h-16 items-center justify-between gap-6">
       <!-- Logo -->
-      <a href="/" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-        GeeksPatrol
+      <a href="/" class="flex items-center gap-2 text-xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
+        <span class="text-2xl">⚡</span>
+        <span>GeeksPatrol</span>
       </a>
 
       <!-- Navigation desktop -->
-      <nav class="hidden lg:flex items-center gap-6">
+      <nav class="hidden lg:flex items-center gap-1">
         {PRIMARY_NAV.map(item => (
           <a 
             href={buildHref(item)} 
-            class="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-indigo-600 dark:hover:text-indigo-300"
+            class="group relative px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+            title={item.description}
           >
-            {item.label}
+            <span class="flex items-center gap-2">
+              {item.label}
+            </span>
+            <!-- Underline animation -->
+            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 group-hover:w-full transition-all duration-300"></span>
           </a>
         ))}
       </nav>
 
       <!-- Actions -->
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <!-- Search button -->
+        <button 
+          id="search-toggle"
+          class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+          aria-label="Rechercher"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </button>
+
         <!-- Theme toggle -->
-        <button id="theme-toggle" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <button 
+          id="theme-toggle" 
+          class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+          aria-label="Changer de thème"
+        >
+          <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
+          </svg>
+          <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
           </svg>
         </button>
+
+        <!-- Mobile menu button -->
+        <button 
+          id="mobile-menu-toggle"
+          class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+          aria-label="Menu mobile"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    <nav class="container mx-auto px-4 py-4 space-y-2">
+      {PRIMARY_NAV.map(item => (
+        <a 
+          href={buildHref(item)} 
+          class="block px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+        >
+          <div class="font-medium">{item.label}</div>
+          {item.description && (
+            <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">{item.description}</div>
+          )}
+        </a>
+      ))}
+    </nav>
+  </div>
+
+  <!-- Search overlay -->
+  <div id="search-overlay" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
+    <div class="container mx-auto px-4 pt-20">
+      <div class="max-w-2xl mx-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <input 
+              type="text" 
+              id="search-input"
+              placeholder="Rechercher des articles, catégories..."
+              class="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none text-lg"
+              autofocus
+            />
+            <button id="search-close" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+              <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="search-results" class="p-6 max-h-96 overflow-y-auto">
+            <p class="text-slate-500 dark:text-slate-400 text-center py-8">Commencez à taper pour rechercher...</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -52,4 +134,75 @@ import { PRIMARY_NAV, SECONDARY_NAV, buildHref } from '../config/navigation';
   // Load saved theme
   const savedTheme = localStorage.getItem('theme') || 'dark';
   html.classList.add(savedTheme);
+
+  // Mobile menu toggle
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+  
+  mobileMenuToggle?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+
+  // Search overlay
+  const searchToggle = document.getElementById('search-toggle');
+  const searchOverlay = document.getElementById('search-overlay');
+  const searchClose = document.getElementById('search-close');
+  const searchInput = document.getElementById('search-input');
+  
+  const openSearch = () => {
+    searchOverlay?.classList.remove('hidden');
+    setTimeout(() => searchInput?.focus(), 100);
+  };
+  
+  const closeSearch = () => {
+    searchOverlay?.classList.add('hidden');
+  };
+  
+  searchToggle?.addEventListener('click', openSearch);
+  searchClose?.addEventListener('click', closeSearch);
+  
+  // Close search with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !searchOverlay?.classList.contains('hidden')) {
+      closeSearch();
+    }
+    // Open search with Ctrl+K or Cmd+K
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+  
+  // Close search when clicking outside
+  searchOverlay?.addEventListener('click', (e) => {
+    if (e.target === searchOverlay) {
+      closeSearch();
+    }
+  });
+
+  // Simple search functionality (to be enhanced later)
+  searchInput?.addEventListener('input', (e) => {
+    const query = (e.target as HTMLInputElement).value.trim();
+    const resultsDiv = document.getElementById('search-results');
+    
+    if (!resultsDiv) return;
+    
+    if (query.length === 0) {
+      resultsDiv.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-center py-8">Commencez à taper pour rechercher...</p>';
+      return;
+    }
+    
+    if (query.length < 2) {
+      resultsDiv.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-center py-8">Tapez au moins 2 caractères...</p>';
+      return;
+    }
+    
+    // Placeholder for search results
+    resultsDiv.innerHTML = `
+      <p class="text-slate-500 dark:text-slate-400 text-center py-8">
+        🔍 Recherche de "${query}"...<br/>
+        <span class="text-sm mt-2 block">Fonctionnalité en cours de développement</span>
+      </p>
+    `;
+  });
 </script>

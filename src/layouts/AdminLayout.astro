@@ -19,11 +19,11 @@ let isAuthenticated = false;
 if (sessionCookie) {
   try {
     const sessionData = JSON.parse(decodeURIComponent(sessionCookie.split('=')[1]));
-    // Vérifier que la session n'est pas expirée (24h)
+    // Vérifier que la session n'est pas expirée (30 minutes)
     const loginTime = new Date(sessionData.loginTime);
     const now = new Date();
     const hoursDiff = (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
-    isAuthenticated = hoursDiff < 24 && sessionData.is_active;
+    isAuthenticated = hoursDiff < 0.5 && sessionData.is_active; // 30 minutes = 0.5 heures
   } catch (error) {
     isAuthenticated = false;
   }
@@ -147,25 +147,11 @@ if (!isAuthenticated && !isLoginRoute) {
 
             <nav class="flex items-center space-x-3">
               <a
-                href="/admin"
-                class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
-                style="color: var(--text-secondary);"
-              >
-                📊 Dashboard
-              </a>
-              <a
-                href="/admin/posts"
+                href="/admin/dashboard"
                 class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
                 style="color: var(--text-secondary);"
               >
                 📝 Articles
-              </a>
-              <a
-                href="/admin/categories"
-                class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
-                style="color: var(--text-secondary);"
-              >
-                📂 Catégories
               </a>
               <a
                 href="/admin/analytics"

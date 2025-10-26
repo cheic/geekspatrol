@@ -34,10 +34,12 @@ export interface SupabaseArticleRow {
   cover_image_alt?: string | null;
   image_url?: string | null;
   reading_time?: number | null;
-  categories?: Array<{
-    category?: Array<{
+  article_categories?: Array<{
+    category_id?: string | null;
+    category?: {
+      id?: string;
       name?: string | null;
       slug?: string | null;
-    } | null> | null;
+    } | null;
   } | null> | null;
 }

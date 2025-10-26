@@ -42,18 +42,86 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 
   try {
     const { id } = params;
-    const body = await request.json();
-    const { title, excerpt, content, cover_image_path, cover_image_alt } = body;
+    
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'Article ID is required' }), { status: 400 });
+    }
 
-    // Mise à jour de l'article (sans changer le statut)
+    const formData = await request.formData();
+
+    const title = formData.get('title') as string;
+    const slug = formData.get('slug') as string;
+    const description = formData.get('description') as string;
+    const content = formData.get('content') as string;
+    
+    // Parser les JSON avec gestion d'erreur
+    let categoryIds: string[] = [];
+    let sources: any[] = [];
+    
+    try {
+      const categoryIdsStr = formData.get('categoryIds') as string;
+      if (categoryIdsStr && categoryIdsStr.trim()) {
+        categoryIds = JSON.parse(categoryIdsStr);
+      }
+    } catch (e) {
+      console.error('Error parsing categoryIds:', e);
+    }
+    
+    try {
+      const sourcesStr = formData.get('sources') as string;
+      if (sourcesStr && sourcesStr.trim()) {
+        sources = JSON.parse(sourcesStr);
+      }
+    } catch (e) {
+      console.error('Error parsing sources:', e);
+    }
+
+    const imageType = formData.get('imageType') as string;
+    const imageUrl = formData.get('imageUrl') as string;
+    const imageFile = formData.get('imageFile') as File;
+
+    if (!title?.trim() || !slug?.trim() || !content?.trim()) {
+      return new Response(JSON.stringify({ error: 'Title, slug, and content are required' }), { status: 400 });
+    }
+
+    let coverImagePath = null;
+
+    // Handle cover image - either URL or file upload
+    if (imageType === 'url' && imageUrl && imageUrl.trim()) {
+      coverImagePath = imageUrl.trim();
+    } else if (imageType === 'file' && imageFile && imageFile.size > 0) {
+      // Upload file to Supabase Storage
+      if (imageFile.size > 5 * 1024 * 1024) {
+        return new Response(JSON.stringify({ error: 'Image trop grande (max 5MB)' }), { status: 400 });
+      }
+
+      if (!imageFile.type.startsWith('image/')) {
+        return new Response(JSON.stringify({ error: 'Type de fichier non supporté' }), { status: 400 });
+      }
+
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('article-images')
+        .upload(fileName, imageFile, {
+          contentType: imageFile.type,
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+      coverImagePath = uploadData.path;
+    }
+
+    // Mise à jour de l'article
     const { data: article, error } = await supabase
       .from('articles')
       .update({
-        title: title?.trim(),
-        excerpt: excerpt?.trim(),
-        content: content?.trim(),
-        cover_image_path: cover_image_path || null,
-        cover_image_alt: cover_image_alt || null,
+        title: title.trim(),
+        slug: slug.trim(),
+        excerpt: description?.trim() || null,
+        content: content.trim(),
+        cover_image_path: coverImagePath,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -62,13 +130,64 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ article }), {
+    // Supprimer les anciennes catégories
+    await supabase
+      .from('article_categories')
+      .delete()
+      .eq('article_id', id);
+
+    // Ajouter les nouvelles catégories
+    if (categoryIds.length > 0) {
+      const articleCategories = categoryIds.map((categoryId: string) => ({
+        article_id: id,
+        category_id: categoryId
+      }));
+
+      const { error: categoriesError } = await supabase
+        .from('article_categories')
+        .insert(articleCategories);
+
+      if (categoriesError) throw categoriesError;
+    }
+
+    // Supprimer les anciennes sources
+    await supabase
+      .from('sources')
+      .delete()
+      .eq('article_id', id);
+
+    // Ajouter les nouvelles sources
+    if (sources.length > 0) {
+      const articleSources = sources.map((source: any) => ({
+        article_id: id,
+        name: source.name,
+        url: source.url,
+        type: source.type || 'article'
+      }));
+
+      const { error: sourcesError } = await supabase
+        .from('sources')
+        .insert(articleSources);
+
+      if (sourcesError) throw sourcesError;
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      article 
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
+
   } catch (error) {
     console.error('Erreur PUT article:', error);
-    return new Response(JSON.stringify({ error: 'Failed to update article' }), { status: 500 });
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : 'Internal Server Error' 
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 };
 

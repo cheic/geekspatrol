@@ -15,22 +15,26 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, variant = 'regular' 
     });
   };
 
-  const getCategoryNames = () => {
-    if (!article.categories) return '';
-    return article.categories
-      .filter(cat => cat && cat.category)
-      .flatMap(cat => cat!.category!)
-      .filter(cat => cat && cat.name)
-      .map(cat => cat!.name!)
-      .join(', ');
+  const getCategories = () => {
+    if (!article.article_categories) return [];
+    return article.article_categories
+      .filter((ac): ac is NonNullable<typeof ac> => ac !== null && ac.category !== null && ac.category !== undefined)
+      .map(ac => ac.category!)
+      .filter((cat): cat is NonNullable<typeof cat> & { id: string; name: string; slug: string } => 
+        cat !== null && cat.name !== null && cat.name !== undefined && 
+        cat.slug !== null && cat.slug !== undefined &&
+        cat.id !== null && cat.id !== undefined
+      );
   };
+
+  const categories = getCategories();
 
   return (
     <article className={`bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${variant === 'featured' ? 'md:col-span-1' : ''}`}>
-      {article.image_url && (
+      {article.cover_image_path && (
         <div className="aspect-video overflow-hidden">
           <img
-            src={article.image_url}
+            src={article.cover_image_path}
             alt={article.cover_image_alt || article.title}
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           />
@@ -52,11 +56,18 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, variant = 'regular' 
           )}
         </div>
 
-        {getCategoryNames() && (
-          <div className="mb-3">
-            <span className="inline-block bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded text-xs font-medium">
-              {getCategoryNames()}
-            </span>
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {categories.map((category) => (
+              <a
+                key={category.id}
+                href={`/blog/category/${category.slug}`}
+                className="inline-block bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {category.name}
+              </a>
+            ))}
           </div>
         )}
 

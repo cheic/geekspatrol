@@ -128,28 +128,39 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
     try {
       const formData = new FormData();
       formData.append('title', selectedArticle.title);
-      formData.append('excerpt', selectedArticle.excerpt || '');
+      formData.append('slug', selectedArticle.slug); // Le slug est requis
+      formData.append('description', selectedArticle.excerpt || ''); // L'API attend 'description' au lieu de 'excerpt'
       formData.append('content', selectedArticle.content || '');
-      formData.append('sourceName', selectedArticle.sourceName || '');
-      formData.append('sourceUrl', selectedArticle.sourceUrl || '');
-      formData.append('coverImageAlt', selectedArticle.coverImageAlt || '');
       formData.append('categoryIds', JSON.stringify(selectedCategories));
+      
+      // Sources - formater comme un tableau JSON
+      const sources = [];
+      if (selectedArticle.sourceName || selectedArticle.sourceUrl) {
+        sources.push({
+          name: selectedArticle.sourceName || '',
+          url: selectedArticle.sourceUrl || '',
+          type: 'article'
+        });
+      }
+      formData.append('sources', JSON.stringify(sources));
 
+      // Image de couverture
       if (selectedArticle.coverImageType === 'url' && selectedArticle.coverImageUrl) {
-        formData.append('coverImageType', 'url');
-        formData.append('coverImageUrl', selectedArticle.coverImageUrl);
+        formData.append('imageType', 'url');
+        formData.append('imageUrl', selectedArticle.coverImageUrl);
       } else if (selectedArticle.coverImageType === 'upload' && selectedArticle.coverImage) {
-        formData.append('coverImageType', 'upload');
-        formData.append('coverImage', selectedArticle.coverImage);
+        formData.append('imageType', 'file');
+        formData.append('imageFile', selectedArticle.coverImage);
       }
 
-      const response = await fetch(`/admin/api/articles.json?id=${selectedArticle.id}`, {
+      const response = await fetch(`/admin/api/articles/${selectedArticle.id}.json`, {
         method: 'PUT',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la modification de l\'article');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la modification de l\'article');
       }
 
       // Recharger les articles
@@ -158,6 +169,7 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
       setSelectedCategories([]);
     } catch (error) {
       console.error('Erreur lors de la modification:', error);
+      alert(error instanceof Error ? error.message : 'Erreur lors de la modification de l\'article');
       alert('Erreur lors de la modification de l\'article');
     } finally {
       setIsLoading(false);

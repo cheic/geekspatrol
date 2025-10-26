@@ -6,11 +6,11 @@ let isAuthenticated = false;
 if (sessionCookie) {
   try {
     const sessionData = JSON.parse(sessionCookie.value);
-    // Vérifier que la session n'est pas expirée (24h)
+    // Vérifier que la session n'est pas expirée (30 minutes)
     const loginTime = new Date(sessionData.loginTime);
     const now = new Date();
     const hoursDiff = (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
-    isAuthenticated = hoursDiff < 24 && sessionData.is_active;
+    isAuthenticated = hoursDiff < 0.5 && sessionData.is_active; // 30 minutes = 0.5 heures
   } catch (error) {
     isAuthenticated = false;
   }
@@ -57,60 +57,44 @@ const stats = {
 <AdminLayout title="Dashboard Administration">
   <!-- Statistiques -->
   <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-    <div class="bg-slate-800/50 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-slate-300 dark:text-slate-400 text-sm">Total articles</p>
-          <p class="text-2xl font-bold text-white dark:text-white">{stats.total}</p>
-        </div>
-        <div class="w-12 h-12 bg-blue-500/20 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-        </div>
+    <!-- Total Articles -->
+    <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-medium text-slate-300">Total articles</h3>
+        <span class="text-2xl">📝</span>
       </div>
+      <p class="text-3xl font-bold text-white">{stats.total}</p>
+      <p class="text-xs text-slate-400 mt-2">Tous statuts confondus</p>
     </div>
 
-    <div class="bg-slate-800/50 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-slate-300 dark:text-slate-400 text-sm">En attente</p>
-          <p class="text-2xl font-bold text-yellow-400 dark:text-yellow-400">{stats.pending}</p>
-        </div>
-        <div class="w-12 h-12 bg-yellow-500/20 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-yellow-400 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
+    <!-- Articles en Attente -->
+    <div class="bg-yellow-900/20 backdrop-blur-sm border border-yellow-700/50 rounded-lg p-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-medium text-yellow-300">En Attente</h3>
+        <span class="text-2xl">⏳</span>
       </div>
+      <p class="text-3xl font-bold text-yellow-400">{stats.pending}</p>
+      <p class="text-xs text-yellow-400/70 mt-2">À valider</p>
     </div>
 
-    <div class="bg-slate-800/50 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-slate-300 dark:text-slate-400 text-sm">Approuvés</p>
-          <p class="text-2xl font-bold text-green-400 dark:text-green-400">{stats.approved}</p>
-        </div>
-        <div class="w-12 h-12 bg-green-500/20 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-green-400 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
+    <!-- Articles Approuvés -->
+    <div class="bg-green-900/20 backdrop-blur-sm border border-green-700/50 rounded-lg p-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-medium text-green-300">Approuvés</h3>
+        <span class="text-2xl">✅</span>
       </div>
+      <p class="text-3xl font-bold text-green-400">{stats.approved}</p>
+      <p class="text-xs text-green-400/70 mt-2">Publiés en ligne</p>
     </div>
 
-    <div class="bg-slate-800/50 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-slate-300 dark:text-slate-400 text-sm">Rejetés</p>
-          <p class="text-2xl font-bold text-red-400 dark:text-red-400">{stats.rejected}</p>
-        </div>
-        <div class="w-12 h-12 bg-red-500/20 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-red-400 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </div>
+    <!-- Articles Rejetés -->
+    <div class="bg-red-900/20 backdrop-blur-sm border border-red-700/50 rounded-lg p-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-medium text-red-300">Rejetés</h3>
+        <span class="text-2xl">❌</span>
       </div>
+      <p class="text-3xl font-bold text-red-400">{stats.rejected}</p>
+      <p class="text-xs text-red-400/70 mt-2">Non publiés</p>
     </div>
   </div>
 

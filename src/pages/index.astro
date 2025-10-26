@@ -4,95 +4,148 @@ import ArticleCard from '../components/ArticleCard.tsx';
 import { AdSlot } from '../components/ads/AdSlot.tsx';
 import { supabase } from '../lib/supabase';
 
-// Fetch articles
-const sevenDaysAgo = new Date();
-sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+// Récupérer les articles publiés des 30 derniers jours
+const thirtyDaysAgo = new Date();
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
 const { data: articles } = await supabase
   .from('articles')
   .select(`
     id, title, slug, excerpt, cover_image_path, cover_image_alt, 
-    created_at, status, image_url, reading_time,
-    categories:article_categories(category:categories(name, slug))
+    created_at, status,
+    article_categories(category_id, category:categories(id, name, slug))
   `)
   .eq('status', 'approved')
-  .gte('created_at', sevenDaysAgo.toISOString())
+  .gte('created_at', thirtyDaysAgo.toISOString())
   .order('created_at', { ascending: false })
-  .limit(12);
+  .limit(20);
 
-const featuredArticles = articles?.slice(0, 3) || [];
-const regularArticles = articles?.slice(3) || [];
+// Article mis en avant (le plus récent)
+const featuredArticle = articles?.[0] || null;
+const regularArticles = articles?.slice(1) || [];
 ---
 
 <BaseLayout title="Geeks Patrol - Actualité Tech" description="Blog tech et actualité geek">
-  <!-- Hero Section -->
-  <section class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950">
-    <div class="container mx-auto px-4 py-20">
-      <div class="text-center max-w-4xl mx-auto">
-        <div class="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-full text-sm font-medium mb-8 border">
-          <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
-          Actualités récentes 
-        </div>
-        
-        <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
-          GeeksPatrol
-        </h1>
-        
-        <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed font-medium">
-          Mobile, IA & Lifestyle Geek
-        </p>
-        
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/blog" class="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
-            Découvrir les articles
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
+  <!-- Hero Section avec article mis en avant -->
+  {featuredArticle && (
+    <section class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950">
+      <div class="container mx-auto px-4 py-12">
+        <div class="max-w-6xl mx-auto">
+          <a href={`/blog/${featuredArticle.slug}`} class="group">
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+              <div class="order-2 md:order-1">
+                <div class="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                  <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                  Article récent
+                </div>
+                
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {featuredArticle.title}
+                </h1>
+                
+                {featuredArticle.excerpt && (
+                  <p class="text-lg text-slate-600 dark:text-slate-400 mb-6 line-clamp-3">
+                    {featuredArticle.excerpt}
+                  </p>
+                )}
+
+                {featuredArticle.article_categories && featuredArticle.article_categories.length > 0 && (
+                  <div class="flex flex-wrap gap-2 mb-4">
+                    {featuredArticle.article_categories.map((ac: any) => (
+                      ac?.category && (
+                        <span class="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
+                          {ac.category.name}
+                        </span>
+                      )
+                    ))}
+                  </div>
+                )}
+                
+                <div class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold group-hover:gap-4 transition-all">
+                  Lire l'article
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="order-1 md:order-2">
+                {featuredArticle.cover_image_path ? (
+                  <img 
+                    src={featuredArticle.cover_image_path} 
+                    alt={featuredArticle.cover_image_alt || featuredArticle.title}
+                    class="w-full h-64 md:h-96 object-cover rounded-2xl shadow-2xl group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div class="w-full h-64 md:h-96 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl flex items-center justify-center">
+                    <span class="text-6xl">📱</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </a>
         </div>
       </div>
+    </section>
+  )}
+
+  <!-- Publicité Google AdSense - Bandeau -->
+  <div class="container mx-auto px-4 py-8">
+    <AdSlot slot="top-banner" format="horizontal" />
+  </div>
+
+  <!-- Grille d'articles récents -->
+  <section class="container mx-auto px-4 py-12">
+    <h2 class="text-3xl font-bold mb-8 text-slate-900 dark:text-white">
+      Derniers articles
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {regularArticles.map((article: any, index: number) => {
+        // Insérer une pub après chaque 6 articles
+        const showAd = (index + 1) % 6 === 0;
+        
+        return (
+          <>
+            <ArticleCard 
+              article={article}
+              client:load
+            />
+            
+            {showAd && (
+              <div class="md:col-span-2 lg:col-span-3">
+                <AdSlot slot={`feed-ad-${index}`} format="horizontal" />
+              </div>
+            )}
+          </>
+        );
+      })}
     </div>
   </section>
 
-  <!-- Articles en vedette -->
-  {featuredArticles.length > 0 && (
-    <section class="py-16 bg-white dark:bg-slate-900">
-      <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold text-center mb-12 text-slate-900 dark:text-white">
-          Articles en vedette
-        </h2>
-        
-        <div class="grid md:grid-cols-3 gap-8 mb-12">
-          {featuredArticles.map((article, index) => (
-            <ArticleCard article={article} variant="featured" client:load />
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
+  <!-- Publicité Google AdSense - Bas de page -->
+  <div class="container mx-auto px-4 py-8">
+    <AdSlot slot="bottom-banner" format="horizontal" />
+  </div>
 
-  <!-- Articles récents -->
-  {regularArticles.length > 0 && (
-    <section class="py-16 bg-slate-50 dark:bg-slate-800">
-      <div class="container mx-auto px-4">
-        <div class="flex justify-between items-center mb-12">
-          <h2 class="text-3xl font-bold text-slate-900 dark:text-white">
-            Articles récents
-          </h2>
-          <a href="/blog" class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium transition-colors">
-            Voir tout
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </a>
-        </div>
-        
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {regularArticles.map((article) => (
-            <ArticleCard article={article} client:load />
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
+  <!-- CTA Section -->
+  <section class="bg-gradient-to-r from-indigo-600 to-purple-600 py-16">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
+        Ne ratez aucune actualité tech
+      </h2>
+      <p class="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
+        Suivez-nous pour rester informé des dernières tendances en technologie, mobile et IA
+      </p>
+      <a 
+        href="/blog" 
+        class="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
+      >
+        Voir tous les articles
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+  </section>
 </BaseLayout>

@@ -1,0 +1,288 @@
+---
+// Vérifier l'authentification côté serveur
+const sessionCookie = Astro.cookies.get('admin_session');
+
+let isAuthenticated = false;
+if (sessionCookie) {
+  try {
+    const sessionData = JSON.parse(sessionCookie.value);
+    // Vérifier que la session n'est pas expirée (30 minutes)
+    const loginTime = new Date(sessionData.loginTime);
+    const now = new Date();
+    const hoursDiff = (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
+    isAuthenticated = hoursDiff < 0.5 && sessionData.is_active; // 30 minutes = 0.5 heures
+  } catch (error) {
+    isAuthenticated = false;
+  }
+}
+
+if (!isAuthenticated) {
+  return Astro.redirect('/admin/login');
+}
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Récupérer toutes les données nécessaires
+const { data: articles } = await supabase
+  .from('articles')
+  .select('id, title, status, created_at, updated_at');
+
+const { data: categories } = await supabase
+  .from('categories')
+  .select('id, name, slug');
+
+const { data: articleCategories } = await supabase
+  .from('article_categories')
+  .select('article_id, category_id');
+
+// Calculer les statistiques
+const now = new Date();
+const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+// Stats générales
+const totalArticles = articles?.length || 0;
+const publishedArticles = articles?.filter(a => a.status === 'approved').length || 0;
+const pendingArticles = articles?.filter(a => a.status === 'pending').length || 0;
+const rejectedArticles = articles?.filter(a => a.status === 'rejected').length || 0;
+
+// Stats temporelles
+const articlesLast30Days = articles?.filter(a => new Date(a.created_at) >= last30Days).length || 0;
+const articlesLast7Days = articles?.filter(a => new Date(a.created_at) >= last7Days).length || 0;
+
+// Taux d'approbation
+const approvalRate = totalArticles > 0 ? ((publishedArticles / totalArticles) * 100).toFixed(1) : 0;
+
+// Articles par catégorie
+const categoryStats = categories?.map(cat => {
+  const count = articleCategories?.filter(ac => ac.category_id === cat.id).length || 0;
+  return { name: cat.name, count };
+}).sort((a, b) => b.count - a.count) || [];
+
+// Articles récents (derniers 10)
+const recentArticles = articles
+  ?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  .slice(0, 10) || [];
+
+// Distribution par jour de la semaine
+const dayStats = [
+  { day: 'Lun', count: 0 },
+  { day: 'Mar', count: 0 },
+  { day: 'Mer', count: 0 },
+  { day: 'Jeu', count: 0 },
+  { day: 'Ven', count: 0 },
+  { day: 'Sam', count: 0 },
+  { day: 'Dim', count: 0 },
+];
+
+articles?.forEach(article => {
+  const date = new Date(article.created_at);
+  const dayIndex = (date.getDay() + 6) % 7; // Convertir dimanche=0 en lundi=0
+  dayStats[dayIndex].count++;
+});
+
+// Articles par mois (12 derniers mois)
+const monthStats: { month: string; count: number }[] = [];
+for (let i = 11; i >= 0; i--) {
+  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  const monthName = d.toLocaleDateString('fr-FR', { month: 'short' });
+  const count = articles?.filter(a => {
+    const articleDate = new Date(a.created_at);
+    return articleDate.getMonth() === d.getMonth() && 
+           articleDate.getFullYear() === d.getFullYear();
+  }).length || 0;
+  monthStats.push({ month: monthName, count });
+}
+---
+
+<AdminLayout title="Analytics - Administration">
+  <div class="py-8">
+    <h1 class="text-3xl font-bold text-white mb-8">📈 Analytics & Statistiques</h1>
+
+    <!-- Statistiques principales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Total Articles -->
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-slate-300">Total Articles</h3>
+          <span class="text-2xl">📝</span>
+        </div>
+        <p class="text-3xl font-bold text-white">{totalArticles}</p>
+        <p class="text-xs text-slate-400 mt-2">Tous statuts confondus</p>
+      </div>
+
+      <!-- Articles Publiés -->
+      <div class="bg-green-900/20 backdrop-blur-sm border border-green-700/50 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-green-300">Publiés</h3>
+          <span class="text-2xl">✅</span>
+        </div>
+        <p class="text-3xl font-bold text-green-400">{publishedArticles}</p>
+        <p class="text-xs text-green-400/70 mt-2">{approvalRate}% de taux d'approbation</p>
+      </div>
+
+      <!-- Articles en Attente -->
+      <div class="bg-yellow-900/20 backdrop-blur-sm border border-yellow-700/50 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-yellow-300">En Attente</h3>
+          <span class="text-2xl">⏳</span>
+        </div>
+        <p class="text-3xl font-bold text-yellow-400">{pendingArticles}</p>
+        <p class="text-xs text-yellow-400/70 mt-2">À valider</p>
+      </div>
+
+      <!-- Articles Rejetés -->
+      <div class="bg-red-900/20 backdrop-blur-sm border border-red-700/50 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-red-300">Rejetés</h3>
+          <span class="text-2xl">❌</span>
+        </div>
+        <p class="text-3xl font-bold text-red-400">{rejectedArticles}</p>
+        <p class="text-xs text-red-400/70 mt-2">Non publiés</p>
+      </div>
+    </div>
+
+    <!-- Activité récente -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">📅 Derniers 7 jours</h3>
+        <p class="text-4xl font-bold text-blue-400">{articlesLast7Days}</p>
+        <p class="text-sm text-slate-400 mt-2">Articles créés</p>
+      </div>
+
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">📆 Derniers 30 jours</h3>
+        <p class="text-4xl font-bold text-indigo-400">{articlesLast30Days}</p>
+        <p class="text-sm text-slate-400 mt-2">Articles créés</p>
+      </div>
+
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">📊 Moyenne</h3>
+        <p class="text-4xl font-bold text-purple-400">
+          {articlesLast30Days > 0 ? (articlesLast30Days / 30).toFixed(1) : '0'}
+        </p>
+        <p class="text-sm text-slate-400 mt-2">Articles par jour (30j)</p>
+      </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Articles par mois -->
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-white mb-6">📈 Articles par mois (12 derniers)</h3>
+        <div class="space-y-3">
+          {monthStats.map(stat => {
+            const maxCount = Math.max(...monthStats.map(s => s.count));
+            const percentage = maxCount > 0 ? (stat.count / maxCount) * 100 : 0;
+            return (
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-slate-300">{stat.month}</span>
+                  <span class="text-slate-400">{stat.count}</span>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-2">
+                  <div 
+                    class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+                    style={`width: ${percentage}%`}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- Articles par jour de la semaine -->
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-white mb-6">📅 Distribution par jour</h3>
+        <div class="space-y-3">
+          {dayStats.map(stat => {
+            const maxCount = Math.max(...dayStats.map(s => s.count));
+            const percentage = maxCount > 0 ? (stat.count / maxCount) * 100 : 0;
+            return (
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-slate-300">{stat.day}</span>
+                  <span class="text-slate-400">{stat.count}</span>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-2">
+                  <div 
+                    class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
+                    style={`width: ${percentage}%`}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+
+    <!-- Articles par catégorie -->
+    <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6 mb-8">
+      <h3 class="text-lg font-semibold text-white mb-6">📂 Articles par catégorie</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {categoryStats.map(stat => {
+          const maxCount = Math.max(...categoryStats.map(s => s.count));
+          const percentage = maxCount > 0 ? (stat.count / maxCount) * 100 : 0;
+          return (
+            <div class="bg-slate-700/30 rounded-lg p-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-slate-200 font-medium">{stat.name}</span>
+                <span class="text-2xl font-bold text-indigo-400">{stat.count}</span>
+              </div>
+              <div class="w-full bg-slate-600 rounded-full h-2">
+                <div 
+                  class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full"
+                  style={`width: ${percentage}%`}
+                ></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    <!-- Articles récents -->
+    <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-white mb-6">🕒 Articles récents</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-slate-700">
+              <th class="text-left py-3 px-4 text-sm font-medium text-slate-300">Titre</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-slate-300">Statut</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-slate-300">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentArticles.map((article, idx) => (
+              <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+                <td class="py-3 px-4 text-sm text-slate-200">{article.title}</td>
+                <td class="py-3 px-4">
+                  {article.status === 'approved' && (
+                    <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">✅ Publié</span>
+                  )}
+                  {article.status === 'pending' && (
+                    <span class="px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded text-xs">⏳ En attente</span>
+                  )}
+                  {article.status === 'rejected' && (
+                    <span class="px-2 py-1 bg-red-900/30 text-red-400 rounded text-xs">❌ Rejeté</span>
+                  )}
+                </td>
+                <td class="py-3 px-4 text-sm text-slate-400">
+                  {new Date(article.created_at).toLocaleDateString('fr-FR', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                  })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
