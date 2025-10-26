@@ -1,0 +1,266 @@
+---
+// AdminLayout.astro - Layout pour les pages d'administration
+import '../styles/global.css';
+
+// Props pour le layout admin
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+// Vérification de l'authentification côté serveur
+const { title, description = "Administration - Geek Patrol" } = Astro.props;
+
+// Vérifier l'authentification via le cookie de session admin
+const cookies = Astro.request.headers.get('cookie') || '';
+const sessionCookie = cookies.split(';').find(c => c.trim().startsWith('admin_session='));
+
+let isAuthenticated = false;
+if (sessionCookie) {
+  try {
+    const sessionData = JSON.parse(decodeURIComponent(sessionCookie.split('=')[1]));
+    // Vérifier que la session n'est pas expirée (24h)
+    const loginTime = new Date(sessionData.loginTime);
+    const now = new Date();
+    const hoursDiff = (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
+    isAuthenticated = hoursDiff < 24 && sessionData.is_active;
+  } catch (error) {
+    isAuthenticated = false;
+  }
+}
+
+const isLoginRoute = Astro.url.pathname === '/admin/login' || Astro.url.pathname === '/admin';
+
+// Rediriger vers login si non authentifié et pas sur la page de login
+if (!isAuthenticated && !isLoginRoute) {
+  return Astro.redirect('/admin/login');
+}
+---
+
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Admin-specific meta -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <!-- Styles spécifiques admin -->
+    <style>
+      .admin-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-bottom: 1px solid #475569;
+      }
+
+      .admin-nav-button {
+        transition: all 0.2s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .admin-nav-button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .logout-button {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .logout-button:hover {
+        background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+      }
+
+      .admin-content {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #000000 100%);
+        min-height: calc(100vh - 80px);
+      }
+
+      .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .admin-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .admin-container {
+          padding: 0 0.5rem;
+        }
+
+        .admin-nav-button {
+          padding: 0.375rem 0.75rem;
+          font-size: 0.8rem;
+        }
+
+        .logout-button {
+          padding: 0.375rem 0.75rem;
+          font-size: 0.8rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body style="background: var(--bg-gradient); color: var(--text-primary);">
+    <!-- Admin Header - seulement si authentifié et pas sur la page de login -->
+    {isAuthenticated && !isLoginRoute && (
+      <header class="backdrop-blur-sm sticky top-0 z-50" style="background: var(--bg-secondary); border-bottom: 1px solid var(--text-secondary);">
+        <div class="py-4" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <h1 class="text-xl font-bold flex items-center" style="color: var(--accent);">
+                <span class="mr-2">⚡</span>
+                Espace Administrateur
+              </h1>
+              <span class="text-sm hidden sm:inline" style="color: var(--text-secondary);">
+                Geek Patrol Admin
+              </span>
+            </div>
+
+            <nav class="flex items-center space-x-3">
+              <a
+                href="/admin"
+                class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
+                style="color: var(--text-secondary);"
+              >
+                📊 Dashboard
+              </a>
+              <a
+                href="/admin/posts"
+                class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
+                style="color: var(--text-secondary);"
+              >
+                📝 Articles
+              </a>
+              <a
+                href="/admin/categories"
+                class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
+                style="color: var(--text-secondary);"
+              >
+                📂 Catégories
+              </a>
+              <a
+                href="/admin/analytics"
+                class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
+                style="color: var(--text-secondary);"
+              >
+                📈 Analytics
+              </a>
+
+              <div class="h-6 w-px mx-2" style="background: var(--text-secondary);"></div>
+
+              <form method="POST" action="/admin/api/logout" class="inline">
+                <button
+                  type="submit"
+                  class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
+                  style="color: var(--text-secondary);"
+                  onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')"
+                >
+                  🚪 Logout
+                </button>
+              </form>
+            </nav>
+          </div>
+        </div>
+      </header>
+    )}
+
+    <!-- Contenu principal -->
+    <main class={`admin-fade-in ${isLoginRoute ? 'w-full min-h-screen' : 'admin-content'}`}>
+      {isLoginRoute ? (
+        <slot />
+      ) : (
+        <div class="admin-container py-8">
+          <slot />
+        </div>
+      )}
+    </main>
+
+    <!-- Footer admin (optionnel) -->
+    {isAuthenticated && !isLoginRoute && (
+      <footer class="backdrop-blur-sm mt-16" style="border-top: 1px solid var(--text-secondary); background: var(--bg-secondary);">
+        <div class="py-6" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+          <div class="flex flex-col sm:flex-row justify-between items-center text-sm" style="color: var(--text-secondary);">
+            <div class="flex items-center space-x-4 mb-4 sm:mb-0">
+              <span>🔒 Session sécurisée</span>
+              <span>•</span>
+              <span>Dernière activité: {new Date().toLocaleTimeString('fr-FR')}</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <a href="/" class="transition-colors" style="color: var(--accent);">
+                ← Retour au site
+              </a>
+              <span>•</span>
+              <span>v2.1.0</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    )}
+
+    <!-- Scripts pour l'interactivité admin -->
+    <script>
+      // Gestion des confirmations
+      document.addEventListener('DOMContentLoaded', () => {
+        // Auto-hide alerts après 5 secondes
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach((alert) => {
+          const alertElement = alert as HTMLElement;
+          setTimeout(() => {
+            alertElement.style.opacity = '0';
+            setTimeout(() => alertElement.remove(), 300);
+          }, 5000);
+        });
+
+        // Gestion du thème (optionnel pour admin)
+        const themeToggle = document.getElementById('admin-theme-toggle');
+        if (themeToggle) {
+          themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('admin-theme', isDark ? 'dark' : 'light');
+          });
+        }
+      });
+
+      // Fonction de logout avec confirmation
+      function confirmLogout() {
+        return confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+      }
+
+      // Auto-refresh pour les pages admin (optionnel)
+      if (window.location.pathname.startsWith('/admin')) {
+        // Refresh automatique toutes les 5 minutes pour garder la session active
+        // Note: La session est gérée par le cookie, pas besoin de ping
+      }
+    </script>
+  </body>
+</html>

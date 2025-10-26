@@ -1,0 +1,162 @@
+---
+// Script pour créer un admin de test
+import { supabase } from '../../lib/supabase';
+import { hashPassword } from '../../lib/admin-auth';
+
+interface CreateResult {
+  success: boolean;
+  message: string;
+  admin: {
+    email: string;
+    full_name: string;
+    role: string;
+  };
+  credentials: {
+    email: string;
+    password: string;
+  };
+}
+
+let result: CreateResult | null = null;
+let error: string | null = null;
+
+try {
+  // Vérifier si la table admins existe et créer un admin de test
+  const testEmail = 'admin@geeks-patrol.com';
+  const testPassword = 'admin123';
+  const testName = 'Admin Test';
+
+  console.log('🔐 Tentative de création d\'admin...');
+  console.log('📧 Email:', testEmail);
+
+  // Hacher le mot de passe
+  const hashedPassword = await hashPassword(testPassword);
+  console.log('✅ Mot de passe haché');
+
+  // Insérer ou mettre à jour l'admin de test
+  const { data, error: dbError } = await supabase
+    .from('admins')
+    .upsert({
+      email: testEmail,
+      password_hash: hashedPassword,
+      full_name: testName,
+      role: 'super_admin'
+    }, {
+      onConflict: 'email'
+    })
+    .select();
+
+  if (dbError) {
+    console.error('❌ Erreur base de données:', dbError);
+    throw new Error(`Erreur DB: ${dbError.message} - ${dbError.hint || ''}`);
+  }
+
+  console.log('✅ Admin créé/mis à jour:', data);
+
+  result = {
+    success: true,
+    message: 'Admin de test créé/mis à jour avec succès',
+    admin: {
+      email: testEmail,
+      full_name: testName,
+      role: 'super_admin'
+    },
+    credentials: {
+      email: testEmail,
+      password: testPassword
+    }
+  };
+
+} catch (err) {
+  error = (err as Error).message;
+  console.error('❌ Erreur lors de la création de l\'admin:', err);
+}
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Créer Admin Test - Geeks Patrol</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/src/styles/global.css">
+</head>
+<body class="min-h-screen p-8" style="background: var(--bg-gradient); color: var(--text-primary);">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold mb-2" style="color: var(--text-primary);">Création d'Admin de Test</h1>
+      <p class="text-lg" style="color: var(--text-secondary);">Créer un compte admin pour tester la connexion</p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+      {error ? (
+        <div class="p-4 rounded border bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-2">❌</span>
+            <span class="font-semibold" style="color: var(--text-primary);">Erreur</span>
+          </div>
+          <p style="color: var(--text-primary);">{error}</p>
+          <div class="mt-4">
+            <p class="text-sm" style="color: var(--text-secondary);">
+              <strong>Étape 1 :</strong> Allez dans votre projet Supabase → SQL Editor
+            </p>
+            <p class="text-sm mt-2" style="color: var(--text-secondary);">
+              <strong>Étape 2 :</strong> Copiez et exécutez ce script SQL :
+            </p>
+            <pre class="mt-2 p-3 bg-gray-900 text-green-400 rounded text-xs overflow-x-auto">CREATE TABLE IF NOT EXISTS admins (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Enable read access for authentication" ON admins
+  FOR SELECT USING (true);</pre>
+            <p class="text-sm mt-2" style="color: var(--text-secondary);">
+              <strong>Étape 3 :</strong> Rechargez cette page pour créer l'admin
+            </p>
+            <div class="mt-3">
+              <button onclick="window.location.reload()" class="px-4 py-2 rounded font-medium transition-colors" style="background: var(--accent); color: white;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+                Recharger la page
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : result ? (
+        <div class="p-4 rounded border bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-2">✅</span>
+            <span class="font-semibold" style="color: var(--text-primary);">{result.message}</span>
+          </div>
+
+          <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded border">
+            <h3 class="font-semibold mb-2" style="color: var(--text-primary);">Identifiants de test :</h3>
+            <div class="space-y-1 text-sm">
+              <p style="color: var(--text-secondary);"><strong>Email :</strong> <code class="bg-white dark:bg-gray-800 px-1 py-0.5 rounded">{result.credentials.email}</code></p>
+              <p style="color: var(--text-secondary);"><strong>Mot de passe :</strong> <code class="bg-white dark:bg-gray-800 px-1 py-0.5 rounded">{result.credentials.password}</code></p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <a href="/admin/login" class="px-4 py-2 rounded font-medium transition-colors" style="background: var(--accent); color: white;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+              Tester la connexion →
+            </a>
+          </div>
+        </div>
+      ) : (
+        <div class="p-4 rounded border bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-2">🔄</span>
+            <span class="font-semibold" style="color: var(--text-primary);">Création en cours...</span>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</body>
+</html>

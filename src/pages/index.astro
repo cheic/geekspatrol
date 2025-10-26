@@ -1,16 +1,98 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.tsx';
+import { AdSlot } from '../components/ads/AdSlot.tsx';
+import { supabase } from '../lib/supabase';
 
+// Fetch articles
+const sevenDaysAgo = new Date();
+sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+const { data: articles } = await supabase
+  .from('articles')
+  .select(`
+    id, title, slug, excerpt, cover_image_path, cover_image_alt, 
+    created_at, status, image_url, reading_time,
+    categories:article_categories(category:categories(name, slug))
+  `)
+  .eq('status', 'approved')
+  .gte('created_at', sevenDaysAgo.toISOString())
+  .order('created_at', { ascending: false })
+  .limit(12);
+
+const featuredArticles = articles?.slice(0, 3) || [];
+const regularArticles = articles?.slice(3) || [];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="Geeks Patrol - Actualité Tech" description="Blog tech et actualité geek">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950">
+    <div class="container mx-auto px-4 py-20">
+      <div class="text-center max-w-4xl mx-auto">
+        <div class="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-full text-sm font-medium mb-8 border">
+          <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+          Actualités récentes 
+        </div>
+        
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
+          GeeksPatrol
+        </h1>
+        
+        <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed font-medium">
+          Mobile, IA & Lifestyle Geek
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/blog" class="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+            Découvrir les articles
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Articles en vedette -->
+  {featuredArticles.length > 0 && (
+    <section class="py-16 bg-white dark:bg-slate-900">
+      <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12 text-slate-900 dark:text-white">
+          Articles en vedette
+        </h2>
+        
+        <div class="grid md:grid-cols-3 gap-8 mb-12">
+          {featuredArticles.map((article, index) => (
+            <ArticleCard article={article} variant="featured" client:load />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Articles récents -->
+  {regularArticles.length > 0 && (
+    <section class="py-16 bg-slate-50 dark:bg-slate-800">
+      <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center mb-12">
+          <h2 class="text-3xl font-bold text-slate-900 dark:text-white">
+            Articles récents
+          </h2>
+          <a href="/blog" class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium transition-colors">
+            Voir tout
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </a>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {regularArticles.map((article) => (
+            <ArticleCard article={article} client:load />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

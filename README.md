@@ -1,23 +1,125 @@
-# Astro Starter Kit: Minimal
+# Geeks Patrol - Blog Tech Astro
 
-```sh
-npm create astro@latest -- --template minimal
+Un blog moderne sur les technologies, l'IA et le lifestyle geek, construit avec Astro, React et Supabase.
+
+## 🚀 Structure du Projet
+
 ```
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
 /
 ├── public/
+│   └── favicon.svg
 ├── src/
-│   └── pages/
-│       └── index.astro
+│   ├── components/
+│   │   ├── Header.astro
+│   │   ├── Footer.astro
+│   │   ├── ArticleCard.tsx
+│   │   ├── ads/
+│   │   │   ├── AdBanner.tsx
+│   │   │   └── AdSlot.tsx
+│   │   └── ui/ (composants réutilisables)
+│   ├── layouts/
+│   │   ├── BaseLayout.astro
+│   │   ├── AdminLayout.astro
+│   │   └── ArticleLayout.astro
+│   ├── pages/
+│   │   ├── index.astro          # Page d'accueil
+│   │   ├── blog/
+│   │   │   ├── index.astro      # Liste des articles
+│   │   │   └── [...slug].astro  # Article individuel
+│   │   ├── category/
+│   │   │   └── [slug].astro     # Articles par catégorie
+│   │   ├── admin/
+│   │   │   ├── index.astro      # Redirection admin
+│   │   │   ├── login.astro      # Page de connexion admin
+│   │   │   ├── dashboard.astro  # Tableau de bord admin
+│   │   │   ├── edit/
+│   │   │   │   └── [id].astro   # Édition d'article
+│   │   │   └── api/
+│   │   │       └── logout.ts    # API de déconnexion
+│   │   └── under-construction.astro
+│   ├── lib/
+│   │   ├── supabase.ts
+│   │   ├── auth.ts
+│   │   └── utils.ts
+│   ├── types/
+│   │   └── index.ts
+│   └── config/
+│       └── navigation.ts
 └── package.json
 ```
+
+## �️ Technologies Utilisées
+
+- **Astro** - Framework web moderne
+- **React** - Composants interactifs
+- **Tailwind CSS** - Framework CSS
+- **Supabase** - Base de données et authentification
+- **TypeScript** - Typage statique
+
+## 🚀 Démarrage Rapide
+
+1. **Installation des dépendances**
+   ```bash
+   npm install
+   ```
+
+2. **Configuration Supabase**
+   - Créer un projet Supabase
+   - Copier les clés API dans `src/lib/supabase.ts`
+
+3. **Démarrage du serveur de développement**
+   ```bash
+   npm run dev
+   ```
+
+4. **Build pour la production**
+   ```bash
+   npm run build
+   ```
+
+## � Organisation des Pages
+
+### Pages Publiques
+- `/` - Page d'accueil avec articles en vedette
+- `/blog` - Liste de tous les articles
+- `/blog/[slug]` - Article individuel
+- `/category/[slug]` - Articles par catégorie
+
+### Administration
+- `/admin` - Redirection automatique vers login ou dashboard
+- `/admin/login` - Page de connexion administrateur
+- `/admin/dashboard` - Tableau de bord avec gestion des articles
+- `/admin/edit/[id]` - Édition d'un article
+
+## 🔐 Authentification Admin
+
+L'authentification admin utilise Supabase Auth avec une interface HTML propre (pas de JSON brut). Les erreurs sont affichées directement dans la page avec des messages utilisateur-friendly.
+
+## 📦 Scripts Disponibles
+
+- `npm run dev` - Serveur de développement
+- `npm run build` - Build de production
+- `npm run preview` - Prévisualisation du build
+- `npm run astro` - Commandes Astro
+
+## 🎨 Fonctionnalités
+
+- ✅ Design responsive avec Tailwind CSS
+- ✅ Authentification admin sécurisée
+- ✅ Gestion des articles avec Supabase
+- ✅ Système de catégories
+- ✅ Intégration publicitaire AdSense
+- ✅ SEO optimisé
+- ✅ Mode sombre/clair
+
+## 📝 Développement
+
+Le projet suit une architecture propre avec séparation des préoccupations :
+- **Components** : Composants réutilisables
+- **Layouts** : Structures de page
+- **Pages** : Routes de l'application
+- **Lib** : Utilitaires et configurations
+- **Types** : Définitions TypeScript
 
 Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
 

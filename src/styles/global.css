@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables CSS pour les couleurs */
+:root {
+  /* Mode clair - couleurs très douces et agréables */
+  --bg-primary: #fefefe;       /* Blanc très légèrement grisé */
+  --bg-secondary: #ffffff;     /* Blanc pur */
+  --text-primary: #475569;     /* Gris doux, moins contrasté */
+  --text-secondary: #94a3b8;   /* Gris moyen */
+  --accent: #8b5cf6;           /* Violet doux */
+  --accent-hover: #7c3aed;     /* Violet un peu plus foncé */
+  /* Gradient for light theme (used as default global background) */
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f3e8ff 100%);
+}
+
+html.dark {
+  /* Mode sombre - couleurs apaisantes pour les yeux */
+  --bg-primary: #0f172a;       /* Bleu très foncé */
+  --bg-secondary: #1e293b;     /* Bleu foncé */
+  --text-primary: #f1f5f9;     /* Blanc cassé */
+  --text-secondary: #94a3b8;   /* Gris clair */
+  --accent: #818cf8;           /* Indigo clair */
+  --accent-hover: #a5b4fc;     /* Indigo plus clair */
+  /* Gradient for dark theme */
+  --bg-gradient: linear-gradient(135deg, #0b1220 0%, #0f172a 50%, #000000 100%);
+}
+
+/* Transitions fluides */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Application des couleurs */
+body {
+  /* Global gradient background (same feel as the admin login) */
+  /* Use the theme-aware gradient defined in CSS variables */
+  background: var(--bg-gradient);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Classes utilitaires pour les composants */
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.accent-hover:hover {
+  color: var(--accent-hover);
+}
+
+/* Media queries pour la réactivité */
+@media (max-width: 768px) {
+  body {
+    padding: 0 1rem;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .text-primary {
+    font-size: 1rem;
+  }
+
+  .text-secondary {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+/* Styles spécifiques pour Astro */
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Styles pour les composants AdSense */
+.adsbygoogle {
+  display: block;
+  margin: 1rem auto;
+}
+
+/* Styles pour les formulaires */
+input, textarea, select {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--text-secondary);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}

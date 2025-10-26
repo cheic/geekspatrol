@@ -1,0 +1,207 @@
+---
+// Logique de traitement du formulaire de connexion
+import { loginAdmin } from '../../lib/admin-auth';
+
+let errorMessage = '';
+let successMessage = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+
+    console.log('Tentative de connexion admin');
+
+    // Utilisation de la fonction loginAdmin personnalisée
+    const adminUser = await loginAdmin(formData);
+
+    console.log('Connexion admin réussie pour:', adminUser.email);
+
+    // Créer un cookie de session avec les données de l'admin
+    const sessionData = {
+      id: adminUser.id,
+      email: adminUser.email,
+      full_name: adminUser.full_name,
+      is_super_admin: adminUser.is_super_admin,
+      is_active: adminUser.is_active,
+      loginTime: new Date().toISOString()
+    };
+
+    Astro.cookies.set('admin_session', JSON.stringify(sessionData), {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 86400 // 24h
+    });
+
+    // Rediriger vers le dashboard
+    return Astro.redirect('/admin/dashboard');
+
+  } catch (error) {
+    errorMessage = (error as Error).message;
+    console.error('Erreur de connexion admin:', error);
+  }
+}
+---
+
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Espace Admin - Geeks Patrol</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/base.css');
+    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/components.css');
+    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/utilities.css');
+  </style>
+  <link rel="stylesheet" href="/src/styles/global.css">
+  <style>
+    /* Styles pour les inputs focus */
+    input:focus {
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+    }
+
+    /* Styles pour le bouton hover */
+    button:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Styles pour les transitions */
+    * {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+  </style>
+  <script>
+    // Fonction pour afficher/masquer le mot de passe
+    function togglePassword() {
+      const passwordInput = document.getElementById('password') as HTMLInputElement;
+      const toggleButton = document.getElementById('password-toggle') as HTMLButtonElement;
+
+      if (!passwordInput || !toggleButton) return;
+
+      const isVisible = passwordInput.type === 'text';
+
+      passwordInput.type = isVisible ? 'password' : 'text';
+
+      // Mettre à jour l'icône
+      toggleButton.innerHTML = isVisible ? `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      ` : `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8S2 12 2 12z" />
+          <path d="M9.88 9.88a3 3 0 104.24 4.24" />
+          <line x1="2" y1="2" x2="22" y2="22" />
+        </svg>
+      `;
+
+      toggleButton.setAttribute('aria-label', isVisible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+      toggleButton.setAttribute('title', isVisible ? 'Afficher' : 'Masquer');
+    }
+
+    // Auto-focus sur le champ mot de passe au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordInput = document.getElementById('password') as HTMLInputElement;
+      const toggleButton = document.getElementById('password-toggle') as HTMLButtonElement;
+      
+      if (passwordInput) {
+        passwordInput.focus();
+      }
+      
+      // Ajouter l'event listener pour le toggle du mot de passe
+      if (toggleButton) {
+        toggleButton.addEventListener('click', togglePassword);
+      }
+    });
+  </script>
+</head>
+<body class="w-full h-screen flex items-center justify-center" style="background: var(--bg-gradient); min-height: 100vh;">
+  <div class="w-full max-w-md mx-4" style="background: var(--bg-secondary); border: 1px solid var(--text-secondary); border-radius: 1rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); backdrop-filter: blur(10px);">
+    <div class="mb-6 text-center">
+      <h1 class="text-2xl font-extrabold" style="color: var(--text-primary);">Espace Admin</h1>
+      <p class="text-sm" style="color: var(--text-secondary);">Connectez-vous pour accéder au tableau de bord</p>
+    </div>
+
+    <!-- Messages d'erreur -->
+    {errorMessage && (
+      <div class="mb-4 p-3 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);">
+        <p class="text-sm" style="color: #ef4444;">{errorMessage}</p>
+      </div>
+    )}
+
+    <!-- Formulaire de connexion -->
+    <form class="space-y-5" method="POST" action="/admin/login">
+      <div>
+        <label for="login" class="block text-sm font-medium" style="color: var(--text-primary);">Identifiant</label>
+        <input
+          id="login"
+          name="login"
+          type="text"
+          required
+          class="mt-2 block w-full px-4 py-3 rounded-lg focus:outline-none"
+          style="background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--text-secondary);"
+          placeholder="votre-login"
+          autocomplete="username"
+        />
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium" style="color: var(--text-primary);">Mot de passe</label>
+        <div class="relative mt-2">
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autocomplete="current-password"
+            class="block w-full px-4 py-3 pr-12 rounded-lg focus:outline-none"
+            style="background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--text-secondary);"
+            placeholder="••••••••"
+          />
+          <button
+            id="password-toggle"
+            type="button"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-1 transition-colors"
+            style="color: var(--text-secondary);"
+            aria-label="Afficher le mot de passe"
+            title="Afficher"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full py-3 rounded-lg text-white font-semibold transition focus:outline-none"
+        style="background: var(--accent);"
+        onmouseover="this.style.background='var(--accent-hover)'"
+        onmouseout="this.style.background='var(--accent)'"
+      >
+        Se connecter
+      </button>
+
+      <div class="mt-4 text-center text-sm" style="color: var(--text-secondary);">
+        <small>Seuls les administrateurs autorisés peuvent accéder à cette zone.</small>
+      </div>
+    </form>
+
+    <!-- Lien retour -->
+    <div class="mt-6 text-center">
+      <a href="/" class="transition-colors text-sm font-medium inline-flex items-center gap-2" style="color: var(--text-secondary);" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Retour au site
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+</html>

@@ -1,0 +1,355 @@
+---
+// Page d'accueil admin - redirection vers login ou dashboard
+import { supabase } from '../../lib/supabase';
+
+// Vérifier si l'utilisateur est connecté
+const cookies = Astro.request.headers.get('cookie') || '';
+const sessionCookie = cookies.split(';').find(c => c.trim().startsWith('admin_session='));
+
+let isAuthenticated = false;
+if (sessionCookie) {
+  try {
+    const { data } = await supabase.auth.getSession();
+    isAuthenticated = !!data.session;
+  } catch (error) {
+    isAuthenticated = false;
+  }
+}
+
+// Rediriger vers le dashboard si connecté, sinon vers login
+if (isAuthenticated) {
+  return Astro.redirect('/admin/dashboard');
+} else {
+  return Astro.redirect('/admin/login');
+}
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Administration - Geeks Patrol</title>
+
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1162060451433522" crossorigin="anonymous"></script>
+
+  <style>
+    .login-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 3rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .logo-section {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      color: #374151;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      background: #ffffff;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: #9ca3af;
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 1rem;
+    }
+
+    .login-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .login-button.loading {
+      position: relative;
+    }
+
+    .login-button.loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      margin: auto;
+      border: 2px solid transparent;
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .back-link a {
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .back-link a:hover {
+      color: #374151;
+    }
+
+    @media (max-width: 640px) {
+      .login-container {
+        padding: 1rem;
+      }
+
+      .login-card {
+        padding: 2rem;
+      }
+
+      .logo {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-section">
+        <div class="logo">GeeksPatrol</div>
+        <div class="subtitle">Administration</div>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="email" class="form-label">Adresse email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-input"
+            placeholder="admin@geekspatrol.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="form-input"
+            placeholder="••••••••"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" class="login-button" id="loginButton">
+          Se connecter
+        </button>
+      </form>
+
+      <div id="errorMessage" class="error-message">
+        Une erreur s'est produite lors de la connexion.
+      </div>
+
+      <div class="back-link">
+        <a href="/" title="Retour au site principal">
+          ← Retour au site
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('loginForm') as HTMLFormElement;
+      const loginButton = document.getElementById('loginButton') as HTMLButtonElement;
+      const errorMessage = document.getElementById('errorMessage') as HTMLDivElement;
+      const emailInput = document.getElementById('email') as HTMLInputElement;
+      const passwordInput = document.getElementById('password') as HTMLInputElement;
+
+      if (!loginForm || !loginButton || !errorMessage || !emailInput || !passwordInput) {
+        console.error('Éléments du formulaire introuvables');
+        return;
+      }
+
+      // Fonction pour afficher les erreurs
+      const showError = (message: string) => {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+        loginButton.disabled = false;
+        loginButton.textContent = 'Se connecter';
+        loginButton.classList.remove('loading');
+      };
+
+      // Fonction pour masquer les erreurs
+      const hideError = () => {
+        errorMessage.classList.remove('show');
+      };
+
+      // Gestionnaire de soumission du formulaire
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+          showError('Veuillez remplir tous les champs.');
+          return;
+        }
+
+        // Afficher l'état de chargement
+        loginButton.disabled = true;
+        loginButton.textContent = '';
+        loginButton.classList.add('loading');
+
+        try {
+          const response = await fetch('/admin/api/auth.json', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email,
+              password
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Redirection vers le dashboard
+            window.location.href = data.redirect || '/admin/dashboard';
+          } else {
+            showError(data.error || 'Une erreur inattendue s\'est produite.');
+          }
+        } catch (error) {
+          console.error('Erreur de connexion:', error);
+          showError('Erreur de connexion. Veuillez réessayer.');
+        } finally {
+          loginButton.disabled = false;
+          loginButton.textContent = 'Se connecter';
+          loginButton.classList.remove('loading');
+        }
+      });
+
+      // Masquer l'erreur quand l'utilisateur commence à taper
+      [emailInput, passwordInput].forEach(input => {
+        input.addEventListener('input', hideError);
+      });
+    });
+  </script>
+</body>
+</html>

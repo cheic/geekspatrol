@@ -1,0 +1,319 @@
+---
+// src/layouts/ArticleLayout.astro
+import { supabase } from '../lib/supabase';
+import { AdSlot } from '../components/ads/AdSlot.tsx';
+
+export interface Props {
+  article: {
+    id: string;
+    title: string;
+    content: string;
+    excerpt: string | null;
+    slug: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    cover_image_path: string | null;
+    cover_image_alt: string | null;
+    image_url?: string;
+    reading_time?: number;
+    author?: string;
+    meta_description?: string;
+    tags?: string[];
+    categories?: any[];
+  };
+  relatedArticles?: any[];
+}
+
+const { article, relatedArticles = [] } = Astro.props;
+
+// Métadonnées SEO
+const title = article.title;
+const description = article.meta_description || article.excerpt || `${article.title} - Geeks Patrol`;
+const image = article.cover_image_path || article.image_url || '/og-image.png';
+const url = `${Astro.site}${Astro.url.pathname}`;
+const publishedTime = new Date(article.created_at).toISOString();
+const modifiedTime = new Date(article.updated_at).toISOString();
+
+// Structured Data (JSON-LD)
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "description": description,
+  "image": image,
+  "datePublished": publishedTime,
+  "dateModified": modifiedTime,
+  "author": {
+    "@type": "Person",
+    "name": article.author || "Geeks Patrol"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Geeks Patrol",
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${Astro.site}/logo.png`
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": url
+  }
+};
+---
+
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width" />
+  <meta name="generator" content={Astro.generator} />
+  
+  <!-- SEO Meta Tags -->
+  <title>{title} - Geeks Patrol</title>
+  <meta name="description" content={description} />
+  <meta name="keywords" content={article.tags?.join(', ') || 'tech, geek, actualité'} />
+  <meta name="author" content={article.author || 'Geeks Patrol'} />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={image} />
+  <meta property="og:url" content={url} />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Geeks Patrol" />
+  <meta property="article:published_time" content={publishedTime} />
+  <meta property="article:modified_time" content={modifiedTime} />
+  <meta property="article:author" content={article.author || 'Geeks Patrol'} />
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={image} />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href={url} />
+  
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1162060451433522" crossorigin="anonymous"></script>
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
+</head>
+<body style="background: var(--bg-gradient); color: var(--text-primary);">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 backdrop-blur" style="border-bottom: 1px solid var(--text-secondary); background: var(--bg-secondary);">
+    <div class="container mx-auto px-4">
+      <div class="flex h-16 items-center justify-between gap-4">
+        <a href="/" class="text-xl font-bold" style="color: var(--accent);">
+          Geeks Patrol
+        </a>
+        
+        <nav class="hidden md:flex items-center gap-6">
+          <a href="/" style="color: var(--text-primary);" class="hover transition-colors">
+            Accueil
+          </a>
+          <a href="/blog" style="color: var(--text-primary);" class="hover transition-colors">
+            Blog
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Article Content -->
+  <main class="min-h-screen">
+    <article class="container mx-auto px-4 py-8 max-w-4xl">
+      <!-- Pub en haut -->
+      <div class="mb-8 flex justify-center">
+        <AdSlot 
+          slot="1234567890" 
+          format="horizontal" 
+          style={{ width: '728px', height: '90px' }} 
+          position="top" 
+          client:load 
+        />
+      </div>
+
+      <!-- Article Header -->
+      <header class="mb-8">
+        <div class="flex flex-wrap gap-2 mb-4">
+          {article.categories?.map((cat: any) => (
+            <a 
+              href={`/category/${cat.category?.slug}`} 
+              class="px-3 py-1 rounded-full text-sm font-medium transition-colors"
+              style="background: var(--bg-secondary); color: var(--accent);"
+            >
+              {cat.category?.name}
+            </a>
+          ))}
+        </div>
+        
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight" style="color: var(--text-primary);">
+          {article.title}
+        </h1>
+        
+        <div class="flex flex-wrap items-center gap-4 mb-6" style="color: var(--text-secondary);">
+          <time datetime={publishedTime}>
+            {new Date(article.created_at).toLocaleDateString('fr-FR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </time>
+          
+          {article.reading_time && (
+            <span>{article.reading_time} min de lecture</span>
+          )}
+          
+          {article.author && (
+            <span>Par {article.author}</span>
+          )}
+        </div>
+        
+        {article.cover_image_path && (
+          <div class="mb-8">
+            <img 
+              src={article.cover_image_path} 
+              alt={article.cover_image_alt || article.title}
+              class="w-full h-64 md:h-96 object-cover rounded-lg shadow-lg"
+            />
+          </div>
+        )}
+      </header>
+
+      <!-- Article Content -->
+      <div class="prose prose-lg dark:prose-invert max-w-none mb-8">
+        <!-- Pub au milieu du contenu -->
+        <div class="my-8 flex justify-center">
+          <AdSlot 
+            slot="0987654321" 
+            format="rectangle" 
+            style={{ width: '300px', height: '250px' }} 
+            position="middle" 
+            client:load 
+          />
+        </div>
+        
+        <slot />
+      </div>
+
+      <!-- Article Footer -->
+      <footer class="pt-8" style="border-top: 1px solid var(--text-secondary);">
+        <!-- Tags -->
+        {article.tags && article.tags.length > 0 && (
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Tags</h3>
+            <div class="flex flex-wrap gap-2">
+              {article.tags.map((tag: string) => (
+                <span class="px-3 py-1 rounded-full text-sm" style="background: var(--bg-secondary); color: var(--text-secondary);">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Pub en bas -->
+        <div class="mb-8 flex justify-center">
+          <AdSlot 
+            slot="1357924680" 
+            format="horizontal" 
+            style={{ width: '728px', height: '90px' }} 
+            position="bottom" 
+            client:load 
+          />
+        </div>
+
+        <!-- Partage -->
+        <div class="flex justify-center gap-4 mb-8">
+          <button 
+            class="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors"
+            style="background: var(--accent);"
+            onmouseover="this.style.background='var(--accent-hover)'"
+            onmouseout="this.style.background='var(--accent)'"
+            onclick={`navigator.share({ title: '${title}', url: '${url}' })`}
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+            </svg>
+            Partager
+          </button>
+        </div>
+      </footer>
+    </article>
+
+    <!-- Articles connexes -->
+    {relatedArticles.length > 0 && (
+      <section class="py-16" style="background: var(--bg-secondary);">
+        <div class="container mx-auto px-4 max-w-6xl">
+          <h2 class="text-3xl font-bold text-center mb-12" style="color: var(--text-primary);">
+            Articles connexes
+          </h2>
+          
+          <div class="grid md:grid-cols-3 gap-8">
+            {relatedArticles.map((relatedArticle: any) => (
+              <article class="rounded-lg overflow-hidden transition-shadow hover:shadow-lg" style="background: var(--bg-primary); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                {relatedArticle.cover_image_path && (
+                  <img 
+                    src={relatedArticle.cover_image_path} 
+                    alt={relatedArticle.cover_image_alt || relatedArticle.title}
+                    class="w-full h-48 object-cover"
+                  />
+                )}
+                
+                <div class="p-6">
+                  <h3 class="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
+                    <a href={`/blog/${relatedArticle.slug}`} class="hover:text-indigo-600 dark:hover:text-indigo-400">
+                      {relatedArticle.title}
+                    </a>
+                  </h3>
+                  
+                  {relatedArticle.excerpt && (
+                    <p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-3">
+                      {relatedArticle.excerpt}
+                    </p>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-12" style="background: var(--bg-primary); color: var(--text-primary);">
+    <div class="container mx-auto px-4">
+      <div class="text-center">
+        <p style="color: var(--text-secondary);">
+          © 2025 Geeks Patrol. Tous droits réservés.
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
+
+<script>
+  // Theme toggle
+  const themeToggle = document.querySelector('[data-theme-toggle]');
+  const html = document.documentElement;
+  
+  themeToggle?.addEventListener('click', () => {
+    const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    html.classList.remove(currentTheme);
+    html.classList.add(newTheme);
+    localStorage.setItem('theme', newTheme);
+  });
+  
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  html.classList.add(savedTheme);
+</script>
