@@ -1,0 +1,220 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import { supabase } from '../lib/supabase';
+
+// Récupérer le paramètre de catégorie depuis l'URL
+const { category } = Astro.params;
+
+// Map des catégories avec leurs informations
+const categoryInfo: Record<string, { title: string; description: string; slug: string }> = {
+  'ia': {
+    title: 'Intelligence Artificielle',
+    description: 'IA, machine learning et technologies émergentes',
+    slug: 'ia'
+  },
+  'mobile': {
+    title: 'Mobile',
+    description: 'Smartphones, tablettes et applications',
+    slug: 'mobile'
+  },
+  'tech': {
+    title: 'Tech & Gadgets',
+    description: 'Hardware, logiciels, innovations et voitures électriques',
+    slug: 'tech'
+  }
+};
+
+// Vérifier si la catégorie existe
+const currentCategory = categoryInfo[category || ''];
+if (!currentCategory) {
+  return Astro.redirect('/404', 301);
+}
+
+// Pagination
+const ARTICLES_PER_PAGE = 12;
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1');
+
+// Récupérer tous les articles
+const { data: articles } = await supabase
+  .from('articles')
+  .select(`
+    id, title, slug, excerpt, cover_image_path, cover_image_alt, 
+    created_at, status, reading_time,
+    article_categories(category_id, category:categories(id, name, slug))
+  `)
+  .eq('status', 'approved')
+  .order('created_at', { ascending: false });
+
+// Filtrer les articles par catégorie
+const allCategoryArticles = articles?.filter(article => 
+  article.article_categories?.some((ac: any) => 
+    ac?.category?.slug === currentCategory.slug
+  )
+) || [];
+
+// Calculer la pagination
+const totalArticles = allCategoryArticles.length;
+const totalPages = Math.ceil(totalArticles / ARTICLES_PER_PAGE);
+const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
+const endIndex = startIndex + ARTICLES_PER_PAGE;
+const categoryArticles = allCategoryArticles.slice(startIndex, endIndex);
+
+// Générer les numéros de pages à afficher
+const getPageNumbers = () => {
+  const pages = [];
+  const maxPagesToShow = 5;
+  
+  if (totalPages <= maxPagesToShow) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (currentPage <= 3) {
+      for (let i = 1; i <= 4; i++) pages.push(i);
+      pages.push('...');
+      pages.push(totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push('...');
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+      pages.push('...');
+      pages.push(totalPages);
+    }
+  }
+  
+  return pages;
+};
+
+const pageNumbers = getPageNumbers();
+
+// Breadcrumb items
+const breadcrumbItems = [
+  { label: 'Accueil', href: '/' },
+  { label: currentCategory.title }
+];
+---
+
+<BaseLayout 
+  title={`${currentCategory.title} - GeeksPatrol`}
+  description={currentCategory.description}
+>
+  <!-- Google Analytics Category View Tracking -->
+  {import.meta.env.GA_MEASUREMENT_ID && (
+    <script define:vars={{ 
+      categoryName: currentCategory.title, 
+      categorySlug: currentCategory.slug 
+    }}>
+      import { trackCategoryView } from '../lib/analytics';
+      
+      // Track category view on page load
+      trackCategoryView(categoryName, categorySlug);
+    </script>
+  )}
+  <section class="container mx-auto px-4 py-12">
+    <!-- Breadcrumb -->
+    <div class="mb-8">
+      <Breadcrumb items={breadcrumbItems} />
+    </div>
+
+    <!-- En-tête de catégorie -->
+    <div class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2 text-slate-900 dark:text-white">
+        {currentCategory.title}
+      </h1>
+      <p class="text-base text-slate-600 dark:text-slate-400">
+        {currentCategory.description}
+      </p>
+      {totalArticles > 0 && (
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          {totalArticles} article{totalArticles > 1 ? 's' : ''}
+        </p>
+      )}
+    </div>
+
+    {categoryArticles.length > 0 ? (
+      <>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {categoryArticles.map((article: any) => (
+            <ArticleCard article={article} client:load />
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav class="flex justify-center items-center gap-2 mt-12" aria-label="Pagination">
+            {/* Bouton Précédent */}
+            {currentPage > 1 ? (
+              <a
+                href={`/${category}?page=${currentPage - 1}`}
+                class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Page précédente"
+              >
+                ← Précédent
+              </a>
+            ) : (
+              <span class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed">
+                ← Précédent
+              </span>
+            )}
+
+            {/* Numéros de page */}
+            <div class="hidden sm:flex gap-2">
+              {pageNumbers.map((pageNum) => (
+                pageNum === '...' ? (
+                  <span class="px-4 py-2 text-slate-500 dark:text-slate-400">
+                    ...
+                  </span>
+                ) : (
+                  <a
+                    href={`/${category}?page=${pageNum}`}
+                    class={`px-4 py-2 rounded-lg border transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-[#00bcd4] border-[#00bcd4] text-white font-semibold'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                    aria-label={`Page ${pageNum}`}
+                    aria-current={currentPage === pageNum ? 'page' : undefined}
+                  >
+                    {pageNum}
+                  </a>
+                )
+              ))}
+            </div>
+
+            {/* Indicateur mobile */}
+            <span class="sm:hidden px-4 py-2 text-slate-600 dark:text-slate-400">
+              Page {currentPage} / {totalPages}
+            </span>
+
+            {/* Bouton Suivant */}
+            {currentPage < totalPages ? (
+              <a
+                href={`/${category}?page=${currentPage + 1}`}
+                class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Page suivante"
+              >
+                Suivant →
+              </a>
+            ) : (
+              <span class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed">
+                Suivant →
+              </span>
+            )}
+          </nav>
+        )}
+      </>
+    ) : (
+      <div class="text-center py-16">
+        <p class="text-slate-500 dark:text-slate-400 text-lg">
+          Aucun article disponible pour le moment
+        </p>
+      </div>
+    )}
+  </section>
+</BaseLayout>

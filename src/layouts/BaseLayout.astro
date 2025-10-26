@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import BaseTheme from '../components/BaseTheme.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { AdSlot } from '../components/ads/AdSlot.tsx';
@@ -8,9 +9,10 @@ export interface Props {
   title: string;
   description?: string;
   image?: string;
+  theme?: 'light' | 'dark' | 'auto';
 }
 
-const { title, description = "Geeks Patrol - Blog tech et actualité", image } = Astro.props;
+const { title, description = "Geeks Patrol - Blog tech et actualité", image, theme = 'auto' } = Astro.props;
 ---
 
 <html lang="fr" class="dark">
@@ -35,10 +37,24 @@ const { title, description = "Geeks Patrol - Blog tech et actualité", image } =
   
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1162060451433522" crossorigin="anonymous"></script>
+
+  <!-- Google Analytics 4 -->
+  {import.meta.env.PUBLIC_GA_MEASUREMENT_ID && (
+    <>
+      <script async src={`https://www.googletagmanager.com/gtag/js?id=${import.meta.env.PUBLIC_GA_MEASUREMENT_ID}`}></script>
+      <script is:inline define:vars={{ gaId: import.meta.env.PUBLIC_GA_MEASUREMENT_ID }}>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', gaId);
+      </script>
+    </>
+  )}
 </head>
 <body style="background: var(--bg-gradient); color: var(--text-primary); min-height: 100vh;">
+  <BaseTheme theme={theme} />
   <Header />
-  <main style="min-height: 100vh;">
+  <main style="min-height: 100vh; padding-top: 2rem;">
     <slot />
   </main>
   <Footer />

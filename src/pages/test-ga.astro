@@ -1,0 +1,13 @@
+---
+const gaId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
+---
+
+<html>
+<head>
+  <title>Test GA</title>
+</head>
+<body>
+  <h1>GA Measurement ID: {gaId}</h1>
+  <p>Is defined: {gaId ? 'YES' : 'NO'}</p>
+</body>
+</html>

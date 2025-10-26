@@ -1,0 +1,52 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Récupérer les paramètres de l'URL
+const { category, slug } = Astro.params;
+
+// Récupérer l'article depuis Supabase
+const { data: article, error } = await supabase
+  .from('articles')
+  .select(`
+    *,
+    article_categories(category:categories(id, name, slug)),
+    sources(name, url, type)
+  `)
+  .eq('slug', slug)
+  .eq('status', 'approved')
+  .single();
+
+// Si l'article n'existe pas, rediriger vers 404
+if (error || !article) {
+  return Astro.redirect('/404', 301);
+}
+
+// Vérifier que l'article appartient bien à la catégorie demandée
+const belongsToCategory = article.article_categories?.some((ac: any) => 
+  ac?.category?.slug === category
+);
+
+if (!belongsToCategory) {
+  return Astro.redirect('/404', 301);
+}
+
+// Analytics tracking
+const categoryName = article.article_categories?.[0]?.category?.name || category;
+---
+
+<ArticleLayout article={article}>
+  <!-- Google Analytics Article View Tracking -->
+  {import.meta.env.PUBLIC_GA_MEASUREMENT_ID && (
+    <script define:vars={{ 
+      articleId: article.id, 
+      articleTitle: article.title, 
+      categoryName: categoryName 
+    }}>
+      import { trackArticleView } from '../../lib/analytics';
+      
+      // Track article view on page load
+      trackArticleView(articleId, articleTitle, categoryName);
+    </script>
+  )}
+</ArticleLayout>

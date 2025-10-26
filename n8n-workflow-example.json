@@ -1,0 +1,153 @@
+{
+  "name": "GeeksPatrol - Créer Article",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-article",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://votre-site.com/api/categories/list.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.N8N_API_KEY}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Get Categories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraire les données du webhook\nconst webhookData = $input.first().json;\n\n// Exemple de mapping des catégories par nom\nconst categoriesData = $('Get Categories').first().json.categories;\nconst categoryMap = {};\ncategoriesData.forEach(cat => {\n  categoryMap[cat.slug] = cat.id;\n});\n\n// Déterminer les IDs des catégories basé sur le contenu\nlet categoryIds = [];\nconst content = webhookData.content.toLowerCase();\n\n// Logique simple pour associer des catégories\nif (content.includes('intelligence artificielle') || content.includes('ia') || content.includes('ai')) {\n  categoryIds.push(categoryMap['ia']);\n}\nif (content.includes('smartphone') || content.includes('mobile') || content.includes('android') || content.includes('ios')) {\n  categoryIds.push(categoryMap['mobile']);\n}\nif (content.includes('tech') || content.includes('gadget') || content.includes('ordinateur')) {\n  categoryIds.push(categoryMap['tech']);\n}\n\n// Si aucune catégorie détectée, utiliser 'tech' par défaut\nif (categoryIds.length === 0) {\n  categoryIds.push(categoryMap['tech']);\n}\n\n// Préparer l'objet pour l'API\nreturn {\n  json: {\n    title: webhookData.title,\n    content: webhookData.content,\n    excerpt: webhookData.excerpt || webhookData.content.substring(0, 200) + '...',\n    cover_image_path: webhookData.image_url || null,\n    status: 'approved', // ou 'draft' selon vos besoins\n    category_ids: categoryIds,\n    sources: webhookData.sources || [],\n    seo_keywords: webhookData.keywords || null\n  }\n};"
+      },
+      "name": "Prepare Article Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://votre-site.com/api/articles/create.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.N8N_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "options": {
+          "bodyContentType": "json"
+        },
+        "body": "={{JSON.stringify($json)}}"
+      },
+      "name": "Create Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}"
+      },
+      "name": "Response Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1130, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 500,
+        "responseBody": "={{\n  {\n    \"error\": \"Failed to create article\",\n    \"details\": $json.error\n  }\n}}"
+      },
+      "name": "Response Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1130, 500]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Categories": {
+      "main": [
+        [
+          {
+            "node": "Prepare Article Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Article Data": {
+      "main": [
+        [
+          {
+            "node": "Create Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Article": {
+      "main": [
+        [
+          {
+            "node": "Response Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

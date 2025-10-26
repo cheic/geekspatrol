@@ -129,10 +129,10 @@ if (!isAuthenticated && !isLoginRoute) {
     </style>
   </head>
 
-  <body style="background: var(--bg-gradient); color: var(--text-primary);">
+  <body style="background: #0f172a; color: var(--text-primary); min-height: 100vh;">
     <!-- Admin Header - seulement si authentifié et pas sur la page de login -->
     {isAuthenticated && !isLoginRoute && (
-      <header class="backdrop-blur-sm sticky top-0 z-50" style="background: var(--bg-secondary); border-bottom: 1px solid var(--text-secondary);">
+      <header class="sticky top-0 z-50" style="background: #1e293b; border-bottom: 1px solid #475569;">
         <div class="py-4" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
@@ -180,11 +180,11 @@ if (!isAuthenticated && !isLoginRoute) {
     )}
 
     <!-- Contenu principal -->
-    <main class={`admin-fade-in ${isLoginRoute ? 'w-full min-h-screen' : 'admin-content'}`}>
+    <main class={`admin-fade-in min-h-screen ${isLoginRoute ? 'w-full' : 'admin-content'}`} style="background: #0f172a;">
       {isLoginRoute ? (
         <slot />
       ) : (
-        <div class="admin-container py-8">
+        <div class="admin-container py-8 mt-8 mb-8">
           <slot />
         </div>
       )}
@@ -192,7 +192,7 @@ if (!isAuthenticated && !isLoginRoute) {
 
     <!-- Footer admin (optionnel) -->
     {isAuthenticated && !isLoginRoute && (
-      <footer class="backdrop-blur-sm mt-16" style="border-top: 1px solid var(--text-secondary); background: var(--bg-secondary);">
+      <footer class="mt-8" style="border-top: 1px solid #475569; background: #0f172a;">
         <div class="py-6" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
           <div class="flex flex-col sm:flex-row justify-between items-center text-sm" style="color: var(--text-secondary);">
             <div class="flex items-center space-x-4 mb-4 sm:mb-0">

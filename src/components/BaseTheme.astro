@@ -1,0 +1,46 @@
+---
+// BaseTheme.astro - Composant de thème de base pour toutes les pages
+import '../styles/base-theme.css';
+
+export interface Props {
+  theme?: 'light' | 'dark' | 'auto';
+}
+
+const { theme = 'auto' } = Astro.props;
+
+// Déterminer la classe du thème
+const themeClass = theme === 'auto' ? 'dark' : theme;
+---
+
+<!-- Script pour gérer le thème automatiquement -->
+<script>
+  // Importer les fonctions de thème
+  import { applyTheme, getCurrentTheme } from '../config/theme';
+
+  // Appliquer le thème au chargement
+  const savedTheme = getCurrentTheme();
+  applyTheme(savedTheme);
+
+  // Écouter les changements de préférence système
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    const currentTheme = getCurrentTheme();
+    if (currentTheme === 'auto') {
+      applyTheme('auto');
+    }
+  });
+
+  // Exposer les fonctions globalement pour les composants
+  (window as any).applyTheme = applyTheme;
+  (window as any).getCurrentTheme = getCurrentTheme;
+</script>
+
+<!-- Styles pour les transitions fluides -->
+<style>
+  html {
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+  }
+
+  * {
+    transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
+  }
+</style>

@@ -1,7 +1,9 @@
 ---
 // src/layouts/ArticleLayout.astro
+import BaseLayout from './BaseLayout.astro';
 import { supabase } from '../lib/supabase';
 import { AdSlot } from '../components/ads/AdSlot.tsx';
+import Breadcrumb from '../components/Breadcrumb.astro';
 
 export interface Props {
   article: {
@@ -21,11 +23,64 @@ export interface Props {
     meta_description?: string;
     tags?: string[];
     categories?: any[];
+    article_categories?: any[];
+    sources?: any[];
   };
   relatedArticles?: any[];
 }
 
 const { article, relatedArticles = [] } = Astro.props;
+
+// Helper pour générer l'URL d'un article
+const getArticleUrl = (article: any) => {
+  if (article?.article_categories?.[0]?.category?.slug) {
+    return `/${article.article_categories[0].category.slug}/${article.slug}`;
+  }
+  return `/`;
+};
+
+// Récupérer les articles de la même catégorie
+const firstCategory = article.article_categories?.[0]?.category;
+let sameCategoryArticles: any[] = [];
+
+if (firstCategory) {
+  const { data: categoryArticles } = await supabase
+    .from('articles')
+    .select(`
+      id,
+      title,
+      slug,
+      excerpt,
+      cover_image_path,
+      cover_image_alt,
+      reading_time,
+      created_at,
+      article_categories(category_id, category:categories(id, name, slug))
+    `)
+    .eq('status', 'approved')
+    .neq('id', article.id)
+    .order('created_at', { ascending: false })
+    .limit(6);
+
+  // Filtrer les articles de la même catégorie
+  sameCategoryArticles = categoryArticles?.filter(art => 
+    art.article_categories?.some((ac: any) => 
+      ac?.category?.slug === firstCategory.slug
+    )
+  ) || [];
+}
+
+// Breadcrumb items - récupérer la première catégorie
+const breadcrumbItems = firstCategory 
+  ? [
+      { label: 'Accueil', href: '/' },
+      { label: firstCategory.name, href: `/${firstCategory.slug}` },
+      { label: article.title }
+    ]
+  : [
+      { label: 'Accueil', href: '/' },
+      { label: article.title }
+    ];
 
 // Métadonnées SEO
 const title = article.title;
@@ -63,77 +118,76 @@ const structuredData = {
 };
 ---
 
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="viewport" content="width=device-width" />
-  <meta name="generator" content={Astro.generator} />
-  
-  <!-- SEO Meta Tags -->
-  <title>{title} - Geeks Patrol</title>
-  <meta name="description" content={description} />
+<BaseLayout title={`${title} - Geeks Patrol`} description={description} image={image}>
+  <!-- SEO Meta Tags supplémentaires pour les articles -->
   <meta name="keywords" content={article.tags?.join(', ') || 'tech, geek, actualité'} />
   <meta name="author" content={article.author || 'Geeks Patrol'} />
   <meta name="robots" content="index, follow" />
-  
-  <!-- Open Graph -->
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:image" content={image} />
-  <meta property="og:url" content={url} />
+
+  <!-- Open Graph supplémentaires pour les articles -->
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="Geeks Patrol" />
   <meta property="article:published_time" content={publishedTime} />
   <meta property="article:modified_time" content={modifiedTime} />
   <meta property="article:author" content={article.author || 'Geeks Patrol'} />
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={title} />
-  <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content={image} />
-  
+
   <!-- Canonical URL -->
   <link rel="canonical" href={url} />
-  
-  <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1162060451433522" crossorigin="anonymous"></script>
-  
+
   <!-- Structured Data -->
   <script type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
-</head>
-<body style="background: var(--bg-gradient); color: var(--text-primary);">
-  <!-- Header -->
-  <header class="sticky top-0 z-50 backdrop-blur" style="border-bottom: 1px solid var(--text-secondary); background: var(--bg-secondary);">
-    <div class="container mx-auto px-4">
-      <div class="flex h-16 items-center justify-between gap-4">
-        <a href="/" class="text-xl font-bold" style="color: var(--accent);">
-          Geeks Patrol
-        </a>
-        
-        <nav class="hidden md:flex items-center gap-6">
-          <a href="/blog" style="color: var(--text-primary);" class="hover transition-colors">
-            Blog
-          </a>
-        </nav>
-      </div>
-    </div>
-  </header>
 
   <!-- Article Content -->
-  <main class="min-h-screen">
-    <article class="container mx-auto px-4 py-8 max-w-4xl">
-      <!-- Pub en haut -->
-      <div class="mb-8 flex justify-center">
-        <AdSlot 
-          slot="1234567890" 
-          format="horizontal" 
-          style={{ width: '728px', height: '90px' }} 
-          position="top" 
-          client:load 
-        />
-      </div>
+  <div class="min-h-screen bg-white dark:bg-slate-900">
+    <!-- Breadcrumb -->
+    <div class="container mx-auto px-4 pt-12 pb-4">
+      <Breadcrumb items={breadcrumbItems} />
+    </div>
+    
+    <!-- Layout 3 colonnes : AdCards | Contenu | Navigation -->
+    <div class="container mx-auto px-6 py-8 max-w-[1400px]">
+  <div class="grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-4 lg:gap-6 xl:gap-8">
+        
+        <!-- Colonne gauche : AdCards + Actions (cachée sur mobile, visible sur desktop) -->
+        <aside class="hidden lg:block">
+          <div class="sticky top-24 space-y-8">
+            <!-- Ad Card 1 -->
+            <div class="w-full flex justify-center">
+              <AdSlot
+                slot="1234567890"
+                format="vertical"
+                style={{ width: '160px', height: '600px' }}
+                position="sidebar"
+                client:load
+              />
+            </div>
+            
+            <!-- Ad Card 2 -->
+            <div class="w-full flex justify-center">
+              <AdSlot
+                slot="2345678901"
+                format="rectangle"
+                style={{ width: '200px', height: '200px' }}
+                position="sidebar"
+                client:load
+              />
+            </div>
+          </div>
+        </aside>
+
+        <!-- Colonne centrale : Contenu de l'article -->
+        <article class="min-w-0">
+          
+          <!-- Pub en haut (mobile uniquement) -->
+          <div class="mb-8 flex justify-center lg:hidden">
+            <AdSlot
+              slot="1234567890"
+              format="horizontal"
+              style={{ width: '320px', height: '100px' }}
+              position="top"
+              client:load
+            />
+          </div>
 
       <!-- Article Header -->
       <header class="mb-8">
@@ -183,9 +237,12 @@ const structuredData = {
       </header>
 
       <!-- Article Content -->
-      <div class="prose prose-lg dark:prose-invert max-w-none mb-8">
+      <div class="prose prose-lg dark:prose-invert max-w-none mb-4">
+        <!-- Contenu de l'article -->
+        <div set:html={article.content} />
+        
         <!-- Pub au milieu du contenu -->
-        <div class="my-8 flex justify-center">
+        <div class="my-6 flex justify-center">
           <AdSlot 
             slot="0987654321" 
             format="rectangle" 
@@ -199,7 +256,7 @@ const structuredData = {
       </div>
 
       <!-- Article Footer -->
-      <footer class="pt-8" style="border-top: 1px solid var(--text-secondary);">
+      <footer class="pt-6" style="border-top: 1px solid var(--text-secondary);">
         <!-- Tags -->
         {article.tags && article.tags.length > 0 && (
           <div class="mb-6">
@@ -214,12 +271,35 @@ const structuredData = {
           </div>
         )}
 
-        <!-- Pub en bas -->
-        <div class="mb-8 flex justify-center">
+        <!-- Sources -->
+        {article.sources && article.sources.length > 0 && (
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Sources</h3>
+            <div class="flex flex-wrap gap-3">
+              {article.sources.map((source: any) => (
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors hover:opacity-80"
+                  style="background: var(--bg-secondary); color: var(--accent); border: 1px solid var(--border-light);"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                  {source.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Pub en bas (mobile uniquement) -->
+        <div class="mb-8 flex justify-center lg:hidden">
           <AdSlot 
             slot="1357924680" 
             format="horizontal" 
-            style={{ width: '728px', height: '90px' }} 
+            style={{ width: '320px', height: '100px' }} 
             position="bottom" 
             client:load 
           />
@@ -228,10 +308,7 @@ const structuredData = {
         <!-- Partage -->
         <div class="flex justify-center gap-4 mb-8">
           <button 
-            class="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors"
-            style="background: var(--accent);"
-            onmouseover="this.style.background='var(--accent-hover)'"
-            onmouseout="this.style.background='var(--accent)'"
+            class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors shadow-md"
             onclick={`navigator.share({ title: '${title}', url: '${url}' })`}
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -243,74 +320,79 @@ const structuredData = {
       </footer>
     </article>
 
-    <!-- Articles connexes -->
-    {relatedArticles.length > 0 && (
-      <section class="py-16" style="background: var(--bg-secondary);">
-        <div class="container mx-auto px-4 max-w-6xl">
-          <h2 class="text-3xl font-bold text-center mb-12" style="color: var(--text-primary);">
-            Articles connexes
-          </h2>
-          
-          <div class="grid md:grid-cols-3 gap-8">
-            {relatedArticles.map((relatedArticle: any) => (
-              <article class="rounded-lg overflow-hidden transition-shadow hover:shadow-lg" style="background: var(--bg-primary); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                {relatedArticle.cover_image_path && (
-                  <img 
-                    src={relatedArticle.cover_image_path} 
-                    alt={relatedArticle.cover_image_alt || relatedArticle.title}
-                    class="w-full h-48 object-cover"
-                  />
-                )}
-                
-                <div class="p-6">
-                  <h3 class="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
-                    <a href={`/blog/${relatedArticle.slug}`} class="hover:text-indigo-600 dark:hover:text-indigo-400">
-                      {relatedArticle.title}
-                    </a>
+        <!-- Colonne droite : Navigation articles similaires -->
+        <aside class="hidden lg:block">
+          <div class="sticky top-24 space-y-6">
+            {/* Articles de la même catégorie */}
+            {sameCategoryArticles.length > 0 && (
+              <div class="bg-slate-900 dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-800 dark:border-slate-700">
+                <div class="px-4 py-3 flex items-center justify-center">
+                  <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wide text-center">
+                    {firstCategory?.name}
                   </h3>
-                  
-                  {relatedArticle.excerpt && (
-                    <p class="text-slate-600 dark:text-slate-400 text-sm line-clamp-3">
-                      {relatedArticle.excerpt}
-                    </p>
-                  )}
                 </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-    )}
-  </main>
+                <div class="divide-y divide-slate-800 dark:divide-slate-700">
+                  {sameCategoryArticles.map((relatedArticle: any) => (
+                    <a 
+                      href={getArticleUrl(relatedArticle)} 
+                      class="block group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <div class="flex gap-3 p-4">
+                        {relatedArticle.cover_image_path ? (
+                          <img 
+                            src={relatedArticle.cover_image_path} 
+                            alt={relatedArticle.cover_image_alt || relatedArticle.title}
+                            class="w-24 h-16 rounded object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div class="w-24 h-16 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                            </svg>
+                          </div>
+                        )}
+                        <div class="flex-1 min-w-0">
+                          <h4 class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-3 leading-snug mb-1">
+                            {relatedArticle.title}
+                          </h4>
+                          {relatedArticle.reading_time && (
+                            <span class="text-xs text-slate-400 dark:text-slate-300 font-medium">
+                              {relatedArticle.reading_time} min de lecture
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+                
+                {firstCategory && (
+                  <div class="bg-slate-900 dark:bg-slate-900 px-4 py-3">
+                    <a 
+                      href={`/${firstCategory.slug}`}
+                      class="block text-center text-sm font-bold text-indigo-400 dark:text-indigo-300 hover:text-indigo-200 dark:hover:text-white transition-colors tracking-wide"
+                    >
+                      Voir tous les articles →
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
 
-  <!-- Footer -->
-  <footer class="py-12" style="background: var(--bg-primary); color: var(--text-primary);">
-    <div class="container mx-auto px-4">
-      <div class="text-center">
-        <p style="color: var(--text-secondary);">
-          © 2025 Geeks Patrol. Tous droits réservés.
-        </p>
+            {/* Pub sidebar droite (desktop uniquement) */}
+            <div class="hidden xl:block">
+              <AdSlot
+                slot="3456789012"
+                format="rectangle"
+                style={{ width: '300px', height: '250px' }}
+                position="sidebar"
+                client:load
+              />
+            </div>
+          </div>
+        </aside>
+
       </div>
     </div>
-  </footer>
-</body>
-</html>
-
-<script>
-  // Theme toggle
-  const themeToggle = document.querySelector('[data-theme-toggle]');
-  const html = document.documentElement;
-  
-  themeToggle?.addEventListener('click', () => {
-    const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    html.classList.remove(currentTheme);
-    html.classList.add(newTheme);
-    localStorage.setItem('theme', newTheme);
-  });
-  
-  // Load saved theme
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  html.classList.add(savedTheme);
-</script>
+  </div>
+</BaseLayout>

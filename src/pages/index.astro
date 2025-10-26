@@ -4,11 +4,15 @@ import ArticleCard from '../components/ArticleCard.tsx';
 import { AdSlot } from '../components/ads/AdSlot.tsx';
 import { supabase } from '../lib/supabase';
 
-// Récupérer les articles publiés des 30 derniers jours
-const thirtyDaysAgo = new Date();
-thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+// Pagination
+const ARTICLES_PER_PAGE = 18; // 1 featured + 17 réguliers (avec pub tous les 6)
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1');
 
-const { data: articles } = await supabase
+// Récupérer tous les articles publiés des 90 derniers jours
+const ninetyDaysAgo = new Date();
+ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+const { data: allArticles } = await supabase
   .from('articles')
   .select(`
     id, title, slug, excerpt, cover_image_path, cover_image_alt, 
@@ -16,24 +20,72 @@ const { data: articles } = await supabase
     article_categories(category_id, category:categories(id, name, slug))
   `)
   .eq('status', 'approved')
-  .gte('created_at', thirtyDaysAgo.toISOString())
-  .order('created_at', { ascending: false })
-  .limit(20);
+  .gte('created_at', ninetyDaysAgo.toISOString())
+  .order('created_at', { ascending: false });
 
-// Article mis en avant (le plus récent)
-const featuredArticle = articles?.[0] || null;
-const regularArticles = articles?.slice(1) || [];
+// Calculer la pagination
+const totalArticles = allArticles?.length || 0;
+const totalPages = Math.ceil(totalArticles / ARTICLES_PER_PAGE);
+const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
+const endIndex = startIndex + ARTICLES_PER_PAGE;
+const paginatedArticles = allArticles?.slice(startIndex, endIndex) || [];
+
+// Article mis en avant (le premier de la page courante)
+const featuredArticle = paginatedArticles[0] || null;
+const regularArticles = paginatedArticles.slice(1);
+
+// Fonction helper pour générer l'URL d'un article
+const getArticleUrl = (article: any) => {
+  if (article?.article_categories?.[0]?.category?.slug) {
+    return `/${article.article_categories[0].category.slug}/${article.slug}`;
+  }
+  return `/`;
+};
+
+const featuredArticleUrl = featuredArticle ? getArticleUrl(featuredArticle) : '/';
+
+// Générer les numéros de pages
+const getPageNumbers = () => {
+  const pages = [];
+  const maxPagesToShow = 5;
+  
+  if (totalPages <= maxPagesToShow) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    if (currentPage <= 3) {
+      for (let i = 1; i <= 4; i++) pages.push(i);
+      pages.push('...');
+      pages.push(totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push('...');
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+      pages.push('...');
+      pages.push(totalPages);
+    }
+  }
+  
+  return pages;
+};
+
+const pageNumbers = getPageNumbers();
 ---
 
 <BaseLayout title="Geeks Patrol - Actualité Tech" description="Blog tech et actualité geek">
   <!-- Hero Section avec article mis en avant -->
   {featuredArticle && (
-    <section class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950">
-      <div class="container mx-auto px-4 py-12">
+    <section class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950 -mt-8">
+      <div class="container mx-auto px-4 py-20">
         <div class="max-w-6xl mx-auto">
-          <a href={`/blog/${featuredArticle.slug}`} class="group">
+          <a href={featuredArticleUrl} class="group">
             <div class="grid md:grid-cols-2 gap-8 items-center">
-              <div class="order-2 md:order-1">
+              <div class="order-2 md:order-1 py-12">
                 <div class="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium mb-4">
                   <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
                   Article récent
@@ -90,41 +142,122 @@ const regularArticles = articles?.slice(1) || [];
   )}
 
   <!-- Publicité Google AdSense - Bandeau -->
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-12">
     <AdSlot slot="top-banner" format="horizontal" />
   </div>
 
   <!-- Grille d'articles récents -->
-  <section class="container mx-auto px-4 py-12">
-    <h2 class="text-3xl font-bold mb-8 text-slate-900 dark:text-white">
-      Derniers articles
-    </h2>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {regularArticles.map((article: any, index: number) => {
-        // Insérer une pub après chaque 6 articles
-        const showAd = (index + 1) % 6 === 0;
-        
-        return (
-          <>
-            <ArticleCard 
-              article={article}
-              client:load
-            />
-            
-            {showAd && (
-              <div class="md:col-span-2 lg:col-span-3">
-                <AdSlot slot={`feed-ad-${index}`} format="horizontal" />
-              </div>
-            )}
-          </>
-        );
-      })}
+  <section class="container mx-auto px-4 py-16">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-3xl font-bold text-slate-900 dark:text-white">
+        Derniers articles
+      </h2>
+      {totalArticles > 0 && (
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {totalArticles} article{totalArticles > 1 ? 's' : ''}
+        </p>
+      )}
     </div>
+
+    {regularArticles.length > 0 ? (
+      <>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {regularArticles.map((article: any, index: number) => {
+            // Insérer une pub après chaque 6 articles
+            const showAd = (index + 1) % 6 === 0;
+            
+            return (
+              <>
+                <ArticleCard 
+                  article={article}
+                  client:load
+                />
+                
+                {showAd && (
+                  <div class="md:col-span-2 lg:col-span-3">
+                    <AdSlot slot={`feed-ad-${index}`} format="horizontal" />
+                  </div>
+                )}
+              </>
+            );
+          })}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav class="flex justify-center items-center gap-2 mt-12" aria-label="Pagination">
+            {/* Bouton Précédent */}
+            {currentPage > 1 ? (
+              <a
+                href={`/?page=${currentPage - 1}`}
+                class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Page précédente"
+              >
+                ← Précédent
+              </a>
+            ) : (
+              <span class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed">
+                ← Précédent
+              </span>
+            )}
+
+            {/* Numéros de page */}
+            <div class="hidden sm:flex gap-2">
+              {pageNumbers.map((pageNum) => (
+                pageNum === '...' ? (
+                  <span class="px-4 py-2 text-slate-500 dark:text-slate-400">
+                    ...
+                  </span>
+                ) : (
+                  <a
+                    href={`/?page=${pageNum}`}
+                    class={`px-4 py-2 rounded-lg border transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-[#00bcd4] border-[#00bcd4] text-white font-semibold'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                    aria-label={`Page ${pageNum}`}
+                    aria-current={currentPage === pageNum ? 'page' : undefined}
+                  >
+                    {pageNum}
+                  </a>
+                )
+              ))}
+            </div>
+
+            {/* Indicateur mobile */}
+            <span class="sm:hidden px-4 py-2 text-slate-600 dark:text-slate-400">
+              Page {currentPage} / {totalPages}
+            </span>
+
+            {/* Bouton Suivant */}
+            {currentPage < totalPages ? (
+              <a
+                href={`/?page=${currentPage + 1}`}
+                class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Page suivante"
+              >
+                Suivant →
+              </a>
+            ) : (
+              <span class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed">
+                Suivant →
+              </span>
+            )}
+          </nav>
+        )}
+      </>
+    ) : (
+      <div class="text-center py-16">
+        <p class="text-slate-500 dark:text-slate-400 text-lg">
+          Aucun article disponible
+        </p>
+      </div>
+    )}
   </section>
 
   <!-- Publicité Google AdSense - Bas de page -->
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-12">
     <AdSlot slot="bottom-banner" format="horizontal" />
   </div>
 
@@ -138,10 +271,10 @@ const regularArticles = articles?.slice(1) || [];
         Suivez-nous pour rester informé des dernières tendances en technologie, mobile et IA
       </p>
       <a 
-        href="/blog" 
+        href="/" 
         class="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
       >
-        Voir tous les articles
+        Retour à l'accueil
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>

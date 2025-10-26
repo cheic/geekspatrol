@@ -1,0 +1,131 @@
+---
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class="breadcrumb-container">
+  <ol class="breadcrumb">
+    {items.map((item, index) => (
+      <li class="breadcrumb-item">
+        {index > 0 && (
+          <svg 
+            class="breadcrumb-separator" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        )}
+        
+        {item.href && index !== items.length - 1 ? (
+          <a 
+            href={item.href} 
+            class="breadcrumb-link"
+            aria-label={`Aller à ${item.label}`}
+          >
+            {index === 0 ? (
+              <svg class="breadcrumb-home-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            ) : null}
+            {index === 0 ? 'Accueil' : item.label}
+          </a>
+        ) : (
+          <span class="breadcrumb-current" aria-current={index === items.length - 1 ? "page" : undefined}>
+            {item.label}
+          </span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .breadcrumb-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .breadcrumb-separator {
+    width: 1rem;
+    height: 1rem;
+    color: rgb(148, 163, 184); /* slate-400 */
+    flex-shrink: 0;
+  }
+
+  .breadcrumb-link {
+    color: rgb(100, 116, 139); /* slate-500 */
+    text-decoration: none;
+    transition: color 0.2s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .breadcrumb-home-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .breadcrumb-link:hover {
+    color: #00bcd4;
+    text-decoration: underline;
+  }
+
+  .breadcrumb-current {
+    color: rgb(51, 65, 85); /* slate-700 */
+    font-medium: 500;
+    white-space: nowrap;
+  }
+
+  /* Dark mode */
+  :global(.dark) .breadcrumb-link {
+    color: rgb(148, 163, 184); /* slate-400 */
+  }
+
+  :global(.dark) .breadcrumb-link:hover {
+    color: #00bcd4;
+  }
+
+  :global(.dark) .breadcrumb-current {
+    color: rgb(226, 232, 240); /* slate-200 */
+  }
+
+  :global(.dark) .breadcrumb-separator {
+    color: rgb(100, 116, 139); /* slate-500 */
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .breadcrumb {
+      font-size: 0.8125rem;
+    }
+  }
+</style>

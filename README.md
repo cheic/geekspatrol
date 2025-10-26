@@ -112,7 +112,52 @@ L'authentification admin utilise Supabase Auth avec une interface HTML propre (p
 - ✅ SEO optimisé
 - ✅ Mode sombre/clair
 
-## 📝 Développement
+## � Google Analytics 4
+
+Le blog inclut une intégration Google Analytics 4 pour le suivi des visiteurs et des performances.
+
+### Configuration
+
+1. **Créer un compte Google Analytics 4 :**
+   - Allez sur [analytics.google.com](https://analytics.google.com)
+   - Créez une nouvelle propriété GA4
+   - Obtenez votre **Measurement ID** (format : `G-XXXXXXXXXX`)
+
+2. **Configurer les variables d'environnement :**
+   ```bash
+   # Copiez le fichier d'exemple
+   cp .env.example .env
+
+   # Ajoutez votre Measurement ID
+   GA_MEASUREMENT_ID=G-XXXXXXXXXX
+   ```
+
+3. **Redémarrer le serveur de développement :**
+   ```bash
+   npm run dev
+   ```
+
+### Événements trackés automatiquement
+
+- **Vues d'articles** : Suivi des consultations d'articles individuels
+- **Vues de catégories** : Suivi des consultations de pages de catégories
+- **Vues de pages** : Suivi automatique de toutes les pages vues
+
+### Dashboard Analytics
+
+Accédez aux statistiques dans l'interface d'administration :
+- URL : `/admin/analytics`
+- Métriques disponibles : visiteurs uniques, pages vues, durée de session, taux de rebond
+- Sources de trafic, appareils utilisés, géolocalisation
+- Top pages visitées
+
+### Respect de la vie privée
+
+- Aucune donnée personnelle n'est collectée
+- Cookies uniquement pour les statistiques (si configuré)
+- Possibilité d'utiliser des alternatives comme Plausible Analytics
+
+## �📝 Développement
 
 Le projet suit une architecture propre avec séparation des préoccupations :
 - **Components** : Composants réutilisables

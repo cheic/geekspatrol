@@ -7,7 +7,7 @@ interface Article {
   slug: string;
   excerpt: string | null;
   content: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'draft' | 'pending' | 'approved' | 'archived';
   created_at: string;
   updated_at: string;
   cover_image_path: string | null;
@@ -46,9 +46,9 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   // Grouper les articles par statut
-  const pendingArticles = articles.filter(a => a.status === 'pending');
+  const pendingArticles = articles.filter(a => a.status === 'pending' || a.status === 'draft');
   const approvedArticles = articles.filter(a => a.status === 'approved');
-  const rejectedArticles = articles.filter(a => a.status === 'rejected');
+  const archivedArticles = articles.filter(a => a.status === 'archived');
 
   const handleArticleAction = async (action: string, articleId: string) => {
     setIsLoading(true);
@@ -524,7 +524,7 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
                   
                   <button
                     onClick={() => setShowConfirmDialog({ show: true, action: 'unpublish', articleId: article.id })}
-                    className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors"
+                    className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors mr-2"
                   >
                     Dépublier
                   </button>
@@ -542,17 +542,17 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
         )}
       </div>
 
-      {/* Articles rejetés */}
+      {/* Articles archivés */}
       <div>
         <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">
-          Articles rejetés ({rejectedArticles.length})
+          Articles archivés ({archivedArticles.length})
         </h2>
         
-        {rejectedArticles.length === 0 ? (
-          <p className="text-slate-500 dark:text-slate-400">Aucun article rejeté</p>
+        {archivedArticles.length === 0 ? (
+          <p className="text-slate-500 dark:text-slate-400">Aucun article archivé</p>
         ) : (
           <div className="space-y-4">
-            {rejectedArticles.map((article) => (
+            {archivedArticles.map((article) => (
               <article key={article.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">

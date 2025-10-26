@@ -9,22 +9,22 @@ export interface NavItem {
 export const PRIMARY_NAV: NavItem[] = [
   { 
     label: 'Actualités', 
-    href: '/blog',
+    href: '/',
     description: 'Toute l\'actualité tech et numérique'
   },
   { 
     label: 'Intelligence Artificielle', 
-    href: '/blog/category/ia',
+    href: '/ia',
     description: 'IA, machine learning et technologies émergentes'
   },
   { 
     label: 'Mobile', 
-    href: '/blog/category/mobile',
+    href: '/mobile',
     description: 'Smartphones, tablettes et applications'
   },
   { 
     label: 'Tech & Gadgets', 
-    href: '/blog/category/tech',
+    href: '/tech',
     description: 'Hardware, logiciels, innovations et voitures électriques'
   },
 ];
