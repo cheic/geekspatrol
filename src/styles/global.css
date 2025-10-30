@@ -30,15 +30,16 @@ html.dark {
 /* Transitions fluides */
 html {
   transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Application des couleurs */
-body {
   /* Global gradient background (same feel as the admin login) */
   /* Use the theme-aware gradient defined in CSS variables */
   background: var(--bg-gradient);
   background-repeat: no-repeat;
   background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Application des couleurs */
+body {
   color: var(--text-primary);
   margin: 0;
   padding: 0;

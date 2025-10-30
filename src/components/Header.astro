@@ -1,6 +1,9 @@
 ---
 import { PRIMARY_NAV, buildHref } from '../config/navigation';
 import ThemeToggle from './ThemeToggle.astro';
+
+// Get current URL for active state
+const currentUrl = Astro.url.pathname;
 ---
 
 <header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm">
@@ -13,19 +16,28 @@ import ThemeToggle from './ThemeToggle.astro';
 
       <!-- Navigation desktop -->
       <nav class="hidden lg:flex items-center gap-1">
-        {PRIMARY_NAV.map(item => (
+        {PRIMARY_NAV.map(item => {
+          const href = buildHref(item);
+          const isActive = currentUrl === href || (href !== '/' && currentUrl.startsWith(href));
+          return (
           <a 
-            href={buildHref(item)} 
-            class="group relative px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+            href={href} 
+            class={`group relative px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              isActive 
+                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50' 
+                : 'text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
             title={item.description}
           >
             <span class="flex items-center gap-2">
               {item.label}
             </span>
             <!-- Underline animation -->
-            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 group-hover:w-full transition-all duration-300"></span>
+            <span class={`absolute bottom-0 left-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 transition-all duration-300 ${
+              isActive ? 'w-full' : 'w-0 group-hover:w-full'
+            }`}></span>
           </a>
-        ))}
+        )})}
       </nav>
 
       <!-- Actions -->
@@ -33,27 +45,23 @@ import ThemeToggle from './ThemeToggle.astro';
         <!-- Search button -->
         <button 
           id="search-toggle"
-          class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors"
+          class="p-2 rounded-lg text-indigo-600 dark:text-slate-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-slate-50 dark:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 border border-indigo-200 dark:border-transparent transition-colors"
           aria-label="Rechercher"
           title="Rechercher (Ctrl/Cmd+K)"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m2.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
+          <i class="fas fa-search w-5 h-5"></i>
         </button>
 
         <!-- Theme toggle (icon only, no background) -->
-        <ThemeToggle class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors" />
+        <ThemeToggle />
 
         <!-- Mobile menu button -->
         <button 
           id="mobile-menu-toggle"
-          class="lg:hidden text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          class="lg:hidden p-2 rounded-lg text-indigo-600 dark:text-slate-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-slate-50 dark:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 border border-indigo-200 dark:border-transparent transition-colors"
           aria-label="Menu mobile"
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
+          <i class="fas fa-bars"></i>
         </button>
       </div>
     </div>
@@ -62,17 +70,24 @@ import ThemeToggle from './ThemeToggle.astro';
   <!-- Mobile menu -->
   <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
   <nav class="container mx-auto px-4 py-3 space-y-2">
-      {PRIMARY_NAV.map(item => (
+      {PRIMARY_NAV.map(item => {
+        const href = buildHref(item);
+        const isActive = currentUrl === href || (href !== '/' && currentUrl.startsWith(href));
+        return (
         <a 
-          href={buildHref(item)} 
-          class="block px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+          href={href} 
+          class={`block px-4 py-3 rounded-lg transition-all ${
+            isActive 
+              ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' 
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400'
+          }`}
         >
           <div class="font-medium">{item.label}</div>
           {item.description && (
             <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">{item.description}</div>
           )}
         </a>
-      ))}
+      )})}
     </nav>
   </div>
 
@@ -82,10 +97,7 @@ import ThemeToggle from './ThemeToggle.astro';
       <div class="max-w-2xl mx-auto">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
           <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <svg class="w-6 h-6 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" stroke-width="2"/>
-              <path stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35"/>
-            </svg>
+            <i class="fas fa-search w-5 h-5 text-indigo-500 dark:text-indigo-400"></i>
             <input 
               type="text" 
               id="search-input"
@@ -93,18 +105,13 @@ import ThemeToggle from './ThemeToggle.astro';
               class="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none text-lg"
               autofocus
             />
-            <button id="search-close" class="p-1 transition-colors" aria-label="Fermer la recherche">
-              <svg class="w-5 h-5 text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
+            <button id="search-close" class="p-2 rounded-lg text-indigo-600 dark:text-slate-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-slate-50 dark:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 border border-indigo-200 dark:border-transparent transition-colors" aria-label="Fermer la recherche">
+              <i class="fas fa-times w-5 h-5"></i>
             </button>
           </div>
           <div id="search-results" class="p-6 max-h-96 overflow-y-auto">
             <div class="text-center py-12">
-              <svg class="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" stroke-width="1.5"/>
-                <path stroke-linecap="round" stroke-width="1.5" d="M21 21l-4.35-4.35"/>
-              </svg>
+              <i class="fas fa-search w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600"></i>
               <p class="text-slate-500 dark:text-slate-400">Recherchez des articles par titre, catégorie ou mot-clé</p>
               <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Tapez au moins 2 caractères pour commencer</p>
             </div>
@@ -116,23 +123,6 @@ import ThemeToggle from './ThemeToggle.astro';
 </header>
 
 <script>
-  // Theme toggle functionality
-  const themeToggle = document.getElementById('theme-toggle');
-  const html = document.documentElement;
-  
-  themeToggle?.addEventListener('click', () => {
-    const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    html.classList.remove(currentTheme);
-    html.classList.add(newTheme);
-    localStorage.setItem('theme', newTheme);
-  });
-  
-  // Load saved theme
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  html.classList.add(savedTheme);
-
   // Mobile menu toggle
   const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
   const mobileMenu = document.getElementById('mobile-menu');
@@ -178,102 +168,95 @@ import ThemeToggle from './ThemeToggle.astro';
     }
   });
 
-  // Simple search functionality (to be enhanced later)
-  let searchTimeout: ReturnType<typeof setTimeout>;
-  
-  searchInput?.addEventListener('input', (e) => {
-    const query = (e.target as HTMLInputElement).value.trim();
-    const resultsDiv = document.getElementById('search-results');
+    // Simple search functionality (to be enhanced later)
+    let searchTimeout: ReturnType<typeof setTimeout>;
     
-    if (!resultsDiv) return;
-    
-    // Clear previous timeout
-    clearTimeout(searchTimeout);
-    
-    if (query.length === 0) {
-      resultsDiv.innerHTML = `
-        <div class="text-center py-12">
-          <svg class="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8" stroke-width="1.5"/>
-            <path stroke-linecap="round" stroke-width="1.5" d="M21 21l-4.35-4.35"/>
-          </svg>
-          <p class="text-slate-500 dark:text-slate-400">Recherchez des articles par titre, catégorie ou mot-clé</p>
-          <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Tapez au moins 2 caractères pour commencer</p>
-        </div>
-      `;
-      return;
-    }
-    
-    if (query.length < 2) {
-      resultsDiv.innerHTML = `
-        <div class="text-center py-8">
-          <p class="text-slate-500 dark:text-slate-400">Tapez au moins 2 caractères...</p>
-        </div>
-      `;
-      return;
-    }
-    
-    // Show loading state
-    resultsDiv.innerHTML = `
-      <div class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
-        <p class="text-slate-500 dark:text-slate-400 mt-4">Recherche en cours...</p>
-      </div>
-    `;
-    
-    // Debounce search
-    searchTimeout = setTimeout(async () => {
-      try {
-        const response = await fetch(`/api/search.json?q=${encodeURIComponent(query)}`);
-        const results = await response.json();
-        
-        if (results.length === 0) {
-          resultsDiv.innerHTML = `
-            <div class="text-center py-12">
-              <svg class="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <p class="text-slate-500 dark:text-slate-400">Aucun résultat trouvé pour "${query}"</p>
-              <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Essayez avec d'autres mots-clés</p>
-            </div>
-          `;
-          return;
-        }
-        
+    searchInput?.addEventListener('input', (e) => {
+      const query = (e.target as HTMLInputElement).value.trim();
+      const resultsDiv = document.getElementById('search-results');
+      
+      if (!resultsDiv) return;
+      
+      // Clear previous timeout
+      clearTimeout(searchTimeout);
+      
+      if (query.length === 0) {
         resultsDiv.innerHTML = `
-          <div class="space-y-3">
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">${results.length} résultat${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}</p>
-            ${results.map((article: any) => `
-              <a href="${article.url}" class="block p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-                <div class="flex items-start gap-3">
-                  ${article.cover_image_path 
-                    ? `<img src="${article.cover_image_path}" alt="${article.title}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" />`
-                    : `<div class="w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                         <svg class="w-8 h-8 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
-                         </svg>
-                       </div>`
-                  }
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">${article.title}</h3>
-                    ${article.excerpt ? `<p class="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">${article.excerpt}</p>` : ''}
-                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                      ${article.category ? `<span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded">${article.category}</span>` : ''}
-                      ${article.reading_time ? `<span>${article.reading_time} min</span>` : ''}
-                    </div>
-                  </div>
-                </div>
-              </a>
-            `).join('')}
+          <div class="text-center py-12">
+            <i class="fas fa-search w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600"></i>
+            <p class="text-slate-500 dark:text-slate-400">Recherchez des articles par titre, catégorie ou mot-clé</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Tapez au moins 2 caractères pour commencer</p>
           </div>
         `;
-      } catch (error) {
+        return;
+      }
+      
+      if (query.length < 2) {
         resultsDiv.innerHTML = `
           <div class="text-center py-8">
-            <p class="text-red-500 dark:text-red-400">Erreur lors de la recherche</p>
+            <p class="text-slate-500 dark:text-slate-400">Tapez au moins 2 caractères...</p>
           </div>
         `;
+        return;
       }
-    }, 300);
-  });
+      
+      // Show loading state
+      resultsDiv.innerHTML = `
+        <div class="text-center py-8">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+          <p class="text-slate-500 dark:text-slate-400 mt-4">Recherche en cours...</p>
+        </div>
+      `;
+      
+      // Debounce search
+      searchTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/search.json?q=${encodeURIComponent(query)}`);
+          const results = await response.json();
+          
+          if (results.length === 0) {
+            resultsDiv.innerHTML = `
+              <div class="text-center py-12">
+                <i class="fas fa-search w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600"></i>
+                <p class="text-slate-500 dark:text-slate-400">Aucun résultat trouvé pour "${query}"</p>
+                <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Essayez avec d'autres mots-clés</p>
+              </div>
+            `;
+            return;
+          }
+          
+          resultsDiv.innerHTML = `
+            <div class="space-y-3">
+              <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">${results.length} résultat${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}</p>
+              ${results.map((article: any) => `
+                <a href="${article.url}" class="block p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                  <div class="flex items-start gap-3">
+                    ${article.cover_image_path 
+                      ? `<img src="${article.cover_image_path}" alt="${article.title}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" />`
+                      : `<div class="w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                           <i class="fas fa-file-alt w-8 h-8 text-white opacity-80"></i>
+                         </div>`
+                    }
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">${article.title}</h3>
+                      ${article.excerpt ? `<p class="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">${article.excerpt}</p>` : ''}
+                      <div class="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        ${article.category ? `<span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded">${article.category}</span>` : ''}
+                        ${article.reading_time ? `<span>${article.reading_time} min</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              `).join('')}
+            </div>
+          `;
+        } catch (error) {
+          resultsDiv.innerHTML = `
+            <div class="text-center py-8">
+              <p class="text-red-500 dark:text-red-400">Erreur lors de la recherche</p>
+            </div>
+          `;
+        }
+      }, 300);
+    });
 </script>

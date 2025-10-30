@@ -4,19 +4,13 @@
 
 <button
   data-theme-toggle
-  id="theme-toggle"
-  class="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+  class="p-2 rounded-lg text-indigo-600 dark:text-slate-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-slate-50 dark:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 border border-indigo-200 dark:border-transparent transition-colors"
   aria-label="Basculer le thème"
 >
   <!-- Sun icon (visible in dark mode) -->
-  <svg class="hidden dark:block w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="5" stroke-width="2"/>
-    <path stroke-linecap="round" stroke-width="2" d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.5-6.5l-1.5 1.5M9 15l-1.5 1.5m0-9L9 9m6 6l1.5 1.5"/>
-  </svg>
+  <i class="hidden dark:block fas fa-sun text-indigo-400"></i>
   <!-- Moon icon (visible in light mode) -->
-  <svg class="block dark:hidden w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-  </svg>
+  <i class="block dark:hidden fas fa-moon text-indigo-600"></i>
 </button>
 
 <script>
@@ -26,42 +20,16 @@
 
   if (themeToggle) {
     themeToggle.addEventListener('click', () => {
-      // Utiliser la fonction centralisée pour basculer le thème
-      if ((window as any).toggleTheme) {
-        (window as any).toggleTheme();
-        // Mettre à jour l'icône après le changement
-        setTimeout(() => {
-          const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-          updateIcon(currentTheme);
-        }, 10);
-      } else {
-        // Fallback si la fonction n'est pas disponible
-        const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-        html.classList.remove(currentTheme);
-        html.classList.add(newTheme);
-        localStorage.setItem('theme', newTheme);
-
-        // Update icon
-        updateIcon(newTheme);
-      }
+      html.classList.remove(currentTheme);
+      html.classList.add(newTheme);
+      localStorage.setItem('theme', newTheme);
     });
-  }  // Function to update the icon based on theme
-  function updateIcon(theme: string) {
-    const icon = themeToggle?.querySelector('svg');
-    if (!icon) return;
-
-    if (theme === 'dark') {
-      // Moon icon for dark theme
-      icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
-    } else {
-      // Sun icon for light theme
-      icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
-    }
   }
 
-  // Initialize icon based on current theme
-  const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-  updateIcon(currentTheme);
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  html.classList.add(savedTheme);
 </script>

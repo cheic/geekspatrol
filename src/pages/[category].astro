@@ -41,18 +41,73 @@ const { data: articles } = await supabase
   .from('articles')
   .select(`
     id, title, slug, excerpt, cover_image_path, cover_image_alt, 
-    created_at, status, reading_time,
+    created_at, status, reading_time, seo_keywords,
     article_categories(category_id, category:categories(id, name, slug))
   `)
   .eq('status', 'approved')
   .order('created_at', { ascending: false });
 
+console.log(`=== DEBUG ${currentCategory.slug.toUpperCase()} ===`);
+console.log('Articles récupérés:', articles?.length || 0);
+if (articles && articles.length > 0) {
+  articles.forEach((article, index) => {
+    console.log(`${index + 1}. ${article.title}`);
+    console.log(`   SEO Keywords: ${article.seo_keywords || 'AUCUN'}`);
+    console.log(`   Catégories: ${article.article_categories?.map(ac => ac.category?.[0]?.slug).join(', ') || 'AUCUNE'}`);
+  });
+}
+console.log('=====================================');
+
 // Filtrer les articles par catégorie
-const allCategoryArticles = articles?.filter(article => 
-  article.article_categories?.some((ac: any) => 
-    ac?.category?.slug === currentCategory.slug
-  )
-) || [];
+const allCategoryArticles = articles?.filter(article => {
+  // Articles de la catégorie principale
+  let hasCategory = false;
+  if (article.article_categories && Array.isArray(article.article_categories)) {
+    hasCategory = article.article_categories.some((ac: any) =>
+      ac?.category?.slug === currentCategory.slug
+    );
+  }
+
+  // Mots-clés associés à chaque catégorie
+  const categoryKeywords: Record<string, string[]> = {
+    'ia': [
+      'intelligence artificielle', 'ia', 'machine learning', 'chatgpt', 'openai', 'gpt',
+      'deep learning', 'neural', 'robotique', 'automatisation', 'algorithme'
+    ],
+    'mobile': [
+      'smartphone', 'mobile', 'android', 'ios', 'iphone', 'samsung', 'application',
+      'app store', 'google play', 'pliable', 'foldable', 'téléphone'
+    ],
+    'tech': [
+      'ordinateur', 'hardware', 'logiciel', 'innovation', 'gadget', 'voiture électrique',
+      'internet', 'réseau', 'cloud', 'cybersécurité', 'blockchain', 'gaming', 'vr', 'ar'
+    ]
+  };
+
+  // Pour les catégories définies, inclure aussi les articles avec des mots-clés associés
+  if (categoryKeywords[currentCategory.slug]) {
+    const seoKeywords = article.seo_keywords || '';
+    
+    if (!seoKeywords || seoKeywords.trim() === '') {
+      return hasCategory; // Retourner seulement si l'article a la catégorie
+    }
+    
+    const keywords: string[] = seoKeywords.toLowerCase().split(',').map((k: string) => k.trim());
+    const relatedKeywords = categoryKeywords[currentCategory.slug];
+
+    const hasRelatedKeywords = keywords.some((keyword: string) =>
+      relatedKeywords.some((related: string) =>
+        keyword.includes(related) || related.includes(keyword)
+      )
+    );
+
+    return hasCategory || hasRelatedKeywords;
+  }
+
+  return hasCategory;
+}) || [];
+
+console.log(`Articles filtrés pour ${currentCategory.slug}:`, allCategoryArticles.length);
 
 // Calculer la pagination
 const totalArticles = allCategoryArticles.length;
