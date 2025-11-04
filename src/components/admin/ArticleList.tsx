@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 
 interface Article {
@@ -45,6 +45,11 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
+  // Debug: surveiller les changements de selectedArticle
+  useEffect(() => {
+    console.log('🔍 selectedArticle changed:', selectedArticle);
+  }, [selectedArticle]);
+
   // Grouper les articles par statut
   const pendingArticles = articles.filter(a => a.status === 'pending' || a.status === 'draft');
   const approvedArticles = articles.filter(a => a.status === 'approved');
@@ -87,7 +92,8 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
   };
 
   const handleEditArticle = (article: Article) => {
-    console.log('🟢 handleEditArticle called for article:', article.title, 'ID:', article.id);
+    console.log('🟢 handleEditArticle clicked for:', article.title);
+    
     const articleForEdit = {
       ...article,
       // Garantir que tous les champs ont une valeur par défaut (jamais null ou undefined)
@@ -108,15 +114,15 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
       articleForEdit.sourceUrl = article.sources[0].url || '';
     }
 
-    console.log('Article for edit:', articleForEdit);
+    console.log('🔵 Setting selectedArticle to:', articleForEdit);
     setSelectedArticle(articleForEdit);
+    
     // Pré-remplir les catégories sélectionnées
     // La structure est: article.article_categories = [{category_id: "...", category: {id: "...", name: "..."}}]
     const currentCategoryIds = article.article_categories
       ?.filter((ac: any) => ac?.category_id || ac?.category?.id)
       ?.map((ac: any) => ac.category_id || ac.category?.id) || [];
-    console.log('🔵 Article categories from DB:', article.article_categories);
-    console.log('🔵 Extracted category IDs:', currentCategoryIds);
+    console.log('🔵 Setting selectedCategories to:', currentCategoryIds);
     setSelectedCategories(currentCategoryIds);
   };
 
@@ -296,6 +302,10 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
                 {/* Formulaire d'édition inline */}
                 {selectedArticle?.id === article.id && (
                   <div className="border-t border-slate-200 dark:border-slate-700 mt-4 pt-4">
+                    <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
+                      Modifier l'article
+                    </h3>
+                    
                     <form onSubmit={handleEditSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Titre */}
@@ -426,7 +436,6 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {categories.map((category) => {
                               const isChecked = selectedCategories.includes(category.id);
-                              console.log(`Category ${category.name} (${category.id}): checked=${isChecked}`, selectedCategories);
                               return (
                                 <label key={category.id} className="flex items-center">
                                   <input
@@ -515,27 +524,224 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
                     </p>
                   </div>
                   
-                  <button
-                    onClick={() => handleEditArticle(article)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors mr-2"
-                  >
-                    Modifier
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowConfirmDialog({ show: true, action: 'unpublish', articleId: article.id })}
-                    className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors mr-2"
-                  >
-                    Dépublier
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowConfirmDialog({ show: true, action: 'delete', articleId: article.id })}
-                    className="px-3 py-1 bg-red-800 text-white rounded text-sm hover:bg-red-900 transition-colors"
-                  >
-                    Supprimer
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditArticle(article)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Modifier
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowConfirmDialog({ show: true, action: 'unpublish', articleId: article.id })}
+                      className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors"
+                    >
+                      Dépublier
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowConfirmDialog({ show: true, action: 'delete', articleId: article.id })}
+                      className="px-3 py-1 bg-red-800 text-white rounded text-sm hover:bg-red-900 transition-colors"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
+
+                {/* Formulaire d'édition inline */}
+                {selectedArticle?.id === article.id && (
+                  <div className="border-t border-slate-200 dark:border-slate-700 mt-4 pt-4">
+                    <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
+                      Modifier l'article
+                    </h3>
+                    
+                    <form onSubmit={handleEditSubmit}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Titre */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Titre *
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedArticle?.title || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, title: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+
+                        {/* Extrait */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Extrait *
+                          </label>
+                          <textarea
+                            value={selectedArticle?.excerpt || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, excerpt: e.target.value} : null)}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+
+                        {/* Source Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Source (nom)
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedArticle?.sourceName || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, sourceName: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Samsung"
+                          />
+                        </div>
+
+                        {/* Source URL */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Source (URL)
+                          </label>
+                          <input
+                            type="url"
+                            value={selectedArticle?.sourceUrl || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, sourceUrl: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="https://www.samsung.com"
+                          />
+                        </div>
+
+                        {/* Image de couverture */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Image de couverture
+                          </label>
+                          <div className="space-y-3">
+                            <div className="flex gap-4">
+                              <label className="flex items-center">
+                                <input
+                                  type="radio"
+                                  name="coverImageType"
+                                  value="url"
+                                  checked={selectedArticle?.coverImageType === 'url'}
+                                  onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageType: e.target.value as 'url' | 'upload'} : null)}
+                                  className="mr-2"
+                                />
+                                URL
+                              </label>
+                              <label className="flex items-center">
+                                <input
+                                  type="radio"
+                                  name="coverImageType"
+                                  value="upload"
+                                  checked={selectedArticle?.coverImageType === 'upload'}
+                                  onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageType: e.target.value as 'url' | 'upload'} : null)}
+                                  className="mr-2"
+                                />
+                                Upload fichier
+                              </label>
+                            </div>
+
+                            {selectedArticle?.coverImageType === 'url' ? (
+                              <input
+                                type="url"
+                                value={selectedArticle?.coverImageUrl || ''}
+                                onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageUrl: e.target.value} : null)}
+                                placeholder="https://example.com/image.jpg"
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            ) : (
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImage: e.target.files?.[0] || null} : null)}
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Texte alternatif */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Texte alternatif de l'image
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedArticle?.coverImageAlt || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageAlt: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Description de l'image pour l'accessibilité"
+                          />
+                        </div>
+
+                        {/* Catégories */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Catégories
+                          </label>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {categories.map((category) => {
+                              const isChecked = selectedCategories.includes(category.id);
+                              return (
+                                <label key={category.id} className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => handleCategoryChange(category.id, e.target.checked)}
+                                    className="mr-2"
+                                  />
+                                  {category.name}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Contenu avec éditeur Markdown */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Contenu *
+                          </label>
+
+                          <div data-color-mode="light" className="w-full">
+                            <MDEditor
+                              value={selectedArticle?.content || ''}
+                              onChange={(value) => setSelectedArticle(selectedArticle ? {...selectedArticle, content: value || null} : null)}
+                              preview="edit"
+                              hideToolbar={false}
+                              visibleDragbar={false}
+                              className="w-full"
+                              textareaProps={{
+                                placeholder: 'Contenu de l\'article en Markdown...'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Boutons */}
+                      <div className="flex gap-3 justify-end pt-6 border-t border-slate-200 dark:border-slate-700 mt-6">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedArticle(null)}
+                          className="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          {isLoading ? 'Modification...' : 'Modifier l\'article'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -594,6 +800,201 @@ export function ArticleList({ articles, categories }: ArticleListProps) {
                     </button>
                   </div>
                 </div>
+
+                {/* Formulaire d'édition inline */}
+                {selectedArticle?.id === article.id && (
+                  <div className="border-t border-slate-200 dark:border-slate-700 mt-4 pt-4">
+                    <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
+                      Modifier l'article
+                    </h3>
+                    
+                    <form onSubmit={handleEditSubmit}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Titre */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Titre *
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedArticle?.title || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, title: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+
+                        {/* Extrait */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Extrait *
+                          </label>
+                          <textarea
+                            value={selectedArticle?.excerpt || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, excerpt: e.target.value} : null)}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+
+                        {/* Source Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Source (nom)
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedArticle?.sourceName || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, sourceName: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Samsung"
+                          />
+                        </div>
+
+                        {/* Source URL */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Source (URL)
+                          </label>
+                          <input
+                            type="url"
+                            value={selectedArticle?.sourceUrl || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, sourceUrl: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="https://www.samsung.com"
+                          />
+                        </div>
+
+                        {/* Image de couverture */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Image de couverture
+                          </label>
+                          <div className="space-y-3">
+                            <div className="flex gap-4">
+                              <label className="flex items-center">
+                                <input
+                                  type="radio"
+                                  name="coverImageType"
+                                  value="url"
+                                  checked={selectedArticle?.coverImageType === 'url'}
+                                  onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageType: e.target.value as 'url' | 'upload'} : null)}
+                                  className="mr-2"
+                                />
+                                URL
+                              </label>
+                              <label className="flex items-center">
+                                <input
+                                  type="radio"
+                                  name="coverImageType"
+                                  value="upload"
+                                  checked={selectedArticle?.coverImageType === 'upload'}
+                                  onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageType: e.target.value as 'url' | 'upload'} : null)}
+                                  className="mr-2"
+                                />
+                                Upload fichier
+                              </label>
+                            </div>
+
+                            {selectedArticle?.coverImageType === 'url' ? (
+                              <input
+                                type="url"
+                                value={selectedArticle?.coverImageUrl || ''}
+                                onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageUrl: e.target.value} : null)}
+                                placeholder="https://example.com/image.jpg"
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            ) : (
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImage: e.target.files?.[0] || null} : null)}
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Texte alternatif */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Texte alternatif de l'image
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedArticle?.coverImageAlt || ''}
+                            onChange={(e) => setSelectedArticle(selectedArticle ? {...selectedArticle, coverImageAlt: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Description de l'image pour l'accessibilité"
+                          />
+                        </div>
+
+                        {/* Catégories */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Catégories
+                          </label>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {categories.map((category) => {
+                              const isChecked = selectedCategories.includes(category.id);
+                              return (
+                                <label key={category.id} className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => handleCategoryChange(category.id, e.target.checked)}
+                                    className="mr-2"
+                                  />
+                                  {category.name}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Contenu avec éditeur Markdown */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Contenu *
+                          </label>
+
+                          <div data-color-mode="light" className="w-full">
+                            <MDEditor
+                              value={selectedArticle?.content || ''}
+                              onChange={(value) => setSelectedArticle(selectedArticle ? {...selectedArticle, content: value || null} : null)}
+                              preview="edit"
+                              hideToolbar={false}
+                              visibleDragbar={false}
+                              className="w-full"
+                              textareaProps={{
+                                placeholder: 'Contenu de l\'article en Markdown...'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Boutons */}
+                      <div className="flex gap-3 justify-end pt-6 border-t border-slate-200 dark:border-slate-700 mt-6">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedArticle(null)}
+                          className="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          {isLoading ? 'Modification...' : 'Modifier l\'article'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </article>
             ))}
           </div>
