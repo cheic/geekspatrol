@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: geekspatrol
+    runtime: node
+    buildCommand: npm run build
+    startCommand: node ./dist/server/entry.mjs
+    plan: free
+    autoDeploy: true
+    branch: main
+    buildFilter:
+      paths:
+        - src/**
+        - public/**
+        - package.json
+        - astro.config.*
+        - render.yaml
+
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.1
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
