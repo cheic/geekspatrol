@@ -86,7 +86,6 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (articleError) {
-      console.error('Erreur lors de la création de l\'article:', articleError);
       return new Response(
         JSON.stringify({ 
           error: 'Erreur lors de la création de l\'article',
@@ -111,7 +110,6 @@ export const POST: APIRoute = async ({ request }) => {
         .insert(categoryAssociations);
 
       if (categoryError) {
-        console.error('Erreur lors de l\'association des catégories:', categoryError);
         // On continue quand même, l'article est créé
       }
     }
@@ -129,7 +127,6 @@ export const POST: APIRoute = async ({ request }) => {
         .insert(sourceInserts);
 
       if (sourceError) {
-        console.error('Erreur lors de l\'ajout des sources:', sourceError);
         // On continue quand même
       }
     }
@@ -158,7 +155,6 @@ export const POST: APIRoute = async ({ request }) => {
     );
 
   } catch (error) {
-    console.error('Erreur API:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Erreur serveur',

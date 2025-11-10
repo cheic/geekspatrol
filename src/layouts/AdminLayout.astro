@@ -16,6 +16,7 @@ const cookies = Astro.request.headers.get('cookie') || '';
 const sessionCookie = cookies.split(';').find(c => c.trim().startsWith('admin_session='));
 
 let isAuthenticated = false;
+let isSuperAdmin = false;
 if (sessionCookie) {
   try {
     const sessionData = JSON.parse(decodeURIComponent(sessionCookie.split('=')[1]));
@@ -24,6 +25,7 @@ if (sessionCookie) {
     const now = new Date();
     const hoursDiff = (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60);
     isAuthenticated = hoursDiff < 0.5 && sessionData.is_active; // 30 minutes = 0.5 heures
+    isSuperAdmin = sessionData.is_super_admin || false;
   } catch (error) {
     isAuthenticated = false;
   }
@@ -160,6 +162,16 @@ if (!isAuthenticated && !isLoginRoute) {
               >
                 📈 Analytics
               </a>
+              
+              {isSuperAdmin && (
+                <a
+                  href="/admin/users"
+                  class="text-sm font-medium px-3 py-2 rounded-md transition-colors"
+                  style="color: var(--text-secondary);"
+                >
+                  👥 Utilisateurs
+                </a>
+              )}
 
               <div class="h-6 w-px mx-2" style="background: var(--text-secondary);"></div>
 

@@ -34,8 +34,6 @@ export async function loginAdmin(formData: FormData): Promise<AdminUser> {
     throw new Error('Veuillez remplir tous les champs.');
   }
 
-  console.log('🔍 Recherche admin pour:', email.toLowerCase());
-
   // Recherche de l'admin dans la table 'admins'
   const { data, error } = await supabase
     .from('admins')
@@ -43,19 +41,13 @@ export async function loginAdmin(formData: FormData): Promise<AdminUser> {
     .eq('email', email.toLowerCase())
     .maybeSingle();
 
-  console.log('📊 Résultat Supabase:', { data: data ? 'trouvé' : 'null', error });
-
   if (error) {
-    console.error('❌ Erreur Supabase:', error);
     throw new Error(`Erreur de base de données: ${error.message}`);
   }
 
   if (!data) {
-    console.error('❌ Admin introuvable pour:', email);
     throw new Error('Admin introuvable - Vérifiez les RLS policies dans Supabase');
   }
-
-  console.log('✅ Admin trouvé:', data.email);
 
   // Vérifier si l'admin est actif
   if (data.is_active === false) {
@@ -63,15 +55,11 @@ export async function loginAdmin(formData: FormData): Promise<AdminUser> {
   }
 
   // Vérification du mot de passe avec SHA-256 (comme Next.js)
-  console.log('🔐 Vérification du mot de passe...');
   const hashedPassword = hashPassword(password);
   
   if (!timingSafeEqual(hashedPassword, data.password_hash)) {
-    console.error('❌ Mot de passe incorrect');
     throw new Error('Mot de passe incorrect');
   }
-
-  console.log('✅ Mot de passe valide - Connexion réussie!');
 
   return {
     id: data.id,

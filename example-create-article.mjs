@@ -5,7 +5,7 @@
  */
 
 const API_URL = 'http://localhost:4321'; // Changez pour votre URL de production
-const API_KEY = '6T941FIFyj/zyAzApBD0Qw/hIejqUGxZo2S6GVQXYQ4='; // Votre clé API
+const API_KEY = process.env.API_KEY || 'YOUR_API_KEY_HERE'; // Définir la clé API via variable d'environnement
 
 /**
  * Récupère la liste des catégories disponibles

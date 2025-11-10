@@ -80,7 +80,6 @@ export function ArticleForm({ categories }: ArticleFormProps) {
         alert(`Erreur: ${error.error}`);
       }
     } catch (error) {
-      console.error('Erreur:', error);
       alert('Erreur lors de la création de l\'article');
     } finally {
       setIsLoading(false);

@@ -7,7 +7,6 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error('Erreur lors de la déconnexion:', error);
     }
 
     // Supprimer le cookie de session
@@ -17,7 +16,6 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
     return redirect('/admin/login?message=logged_out');
 
   } catch (error) {
-    console.error('Erreur serveur lors de la déconnexion:', error);
     return redirect('/admin/login?error=logout_failed');
   }
 };

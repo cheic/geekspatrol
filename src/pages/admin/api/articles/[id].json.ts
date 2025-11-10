@@ -28,7 +28,6 @@ export const GET: APIRoute = async ({ params, cookies }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur GET article:', error);
     return new Response(JSON.stringify({ error: 'Article not found' }), { status: 404 });
   }
 };
@@ -64,7 +63,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
         categoryIds = JSON.parse(categoryIdsStr);
       }
     } catch (e) {
-      console.error('Error parsing categoryIds:', e);
     }
     
     try {
@@ -73,7 +71,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
         sources = JSON.parse(sourcesStr);
       }
     } catch (e) {
-      console.error('Error parsing sources:', e);
     }
 
     const imageType = formData.get('imageType') as string;
@@ -181,7 +178,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     });
 
   } catch (error) {
-    console.error('Erreur PUT article:', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'Internal Server Error' 
     }), { 
@@ -282,7 +278,6 @@ export const PATCH: APIRoute = async ({ params, request, cookies }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur PATCH article:', error);
     return new Response(JSON.stringify({ error: 'Failed to update article' }), { status: 500 });
   }
 };

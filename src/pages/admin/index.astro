@@ -281,7 +281,6 @@ if (isAuthenticated) {
       const passwordInput = document.getElementById('password') as HTMLInputElement;
 
       if (!loginForm || !loginButton || !errorMessage || !emailInput || !passwordInput) {
-        console.error('Éléments du formulaire introuvables');
         return;
       }
 
@@ -338,7 +337,6 @@ if (isAuthenticated) {
             showError(data.error || 'Une erreur inattendue s\'est produite.');
           }
         } catch (error) {
-          console.error('Erreur de connexion:', error);
           showError('Erreur de connexion. Veuillez réessayer.');
         } finally {
           loginButton.disabled = false;

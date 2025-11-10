@@ -26,7 +26,6 @@ export const GET: APIRoute = async ({ request }) => {
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('Erreur lors de la récupération des catégories:', error);
       return new Response(
         JSON.stringify({ 
           error: 'Erreur lors de la récupération des catégories',
@@ -51,7 +50,6 @@ export const GET: APIRoute = async ({ request }) => {
     );
 
   } catch (error) {
-    console.error('Erreur API:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Erreur serveur',

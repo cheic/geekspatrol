@@ -1,5 +1,6 @@
 ---
 // Script pour créer un admin de test
+import '../../styles/global.css';
 import { supabase } from '../../lib/supabase';
 import { hashPassword } from '../../lib/admin-auth';
 
@@ -26,12 +27,9 @@ try {
   const testPassword = 'admin123';
   const testName = 'Admin Test';
 
-  console.log('🔐 Tentative de création d\'admin...');
-  console.log('📧 Email:', testEmail);
 
   // Hacher le mot de passe
   const hashedPassword = await hashPassword(testPassword);
-  console.log('✅ Mot de passe haché');
 
   // Insérer ou mettre à jour l'admin de test
   const { data, error: dbError } = await supabase
@@ -47,11 +45,9 @@ try {
     .select();
 
   if (dbError) {
-    console.error('❌ Erreur base de données:', dbError);
     throw new Error(`Erreur DB: ${dbError.message} - ${dbError.hint || ''}`);
   }
 
-  console.log('✅ Admin créé/mis à jour:', data);
 
   result = {
     success: true,
@@ -69,7 +65,6 @@ try {
 
 } catch (err) {
   error = (err as Error).message;
-  console.error('❌ Erreur lors de la création de l\'admin:', err);
 }
 ---
 
@@ -79,8 +74,6 @@ try {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Créer Admin Test - Geeks Patrol</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/src/styles/global.css">
 </head>
 <body class="min-h-screen p-8" style="background: var(--bg-gradient); color: var(--text-primary);">
   <div class="max-w-2xl mx-auto">

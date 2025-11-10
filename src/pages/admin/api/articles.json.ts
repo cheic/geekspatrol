@@ -29,7 +29,6 @@ export const GET: APIRoute = async ({ params, cookies }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur GET article:', error);
     return new Response(JSON.stringify({ error: 'Article not found' }), { status: 404 });
   }
 };
@@ -126,7 +125,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
         .insert(categoryInserts);
 
       if (categoryError) {
-        console.error('Erreur lors de la mise à jour des catégories:', categoryError);
       }
     }
 
@@ -151,7 +149,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
         .insert(sourceInserts);
 
       if (sourceError) {
-        console.error('Erreur lors de la mise à jour des sources:', sourceError);
       }
     }
 
@@ -160,7 +157,6 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur PUT article:', error);
     return new Response(JSON.stringify({ error: 'Failed to update article' }), { status: 500 });
   }
 };
@@ -256,7 +252,6 @@ export const PATCH: APIRoute = async ({ params, request, cookies }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur PATCH article:', error);
     return new Response(JSON.stringify({ error: 'Failed to update article' }), { status: 500 });
   }
 };
@@ -318,7 +313,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         });
 
       if (uploadError) {
-        console.error('Erreur upload image:', uploadError);
         return new Response(JSON.stringify({ error: 'Erreur lors de l\'upload de l\'image' }), { status: 500 });
       }
 
@@ -358,7 +352,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         });
 
       if (sourceError) {
-        console.error('Erreur lors de l\'ajout de la source:', sourceError);
         // Ne pas échouer pour autant
       }
     }
@@ -372,7 +365,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         .in('id', categories);
 
       if (checkError) {
-        console.error('Erreur lors de la vérification des catégories:', checkError);
         return new Response(JSON.stringify({ error: 'Erreur lors de la vérification des catégories' }), { status: 500 });
       }
 
@@ -390,7 +382,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         .insert(categoryInserts);
 
       if (categoryError) {
-        console.error('Erreur lors de l\'ajout des catégories:', categoryError);
         return new Response(JSON.stringify({ error: 'Erreur lors de l\'ajout des catégories' }), { status: 500 });
       }
     }
@@ -400,7 +391,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur POST article:', error);
     return new Response(JSON.stringify({ error: 'Failed to create article' }), { status: 500 });
   }
 };

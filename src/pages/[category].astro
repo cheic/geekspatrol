@@ -47,16 +47,10 @@ const { data: articles } = await supabase
   .eq('status', 'approved')
   .order('created_at', { ascending: false });
 
-console.log(`=== DEBUG ${currentCategory.slug.toUpperCase()} ===`);
-console.log('Articles récupérés:', articles?.length || 0);
 if (articles && articles.length > 0) {
   articles.forEach((article, index) => {
-    console.log(`${index + 1}. ${article.title}`);
-    console.log(`   SEO Keywords: ${article.seo_keywords || 'AUCUN'}`);
-    console.log(`   Catégories: ${article.article_categories?.map(ac => ac.category?.[0]?.slug).join(', ') || 'AUCUNE'}`);
   });
 }
-console.log('=====================================');
 
 // Filtrer les articles par catégorie
 const allCategoryArticles = articles?.filter(article => {
@@ -107,7 +101,6 @@ const allCategoryArticles = articles?.filter(article => {
   return hasCategory;
 }) || [];
 
-console.log(`Articles filtrés pour ${currentCategory.slug}:`, allCategoryArticles.length);
 
 // Calculer la pagination
 const totalArticles = allCategoryArticles.length;

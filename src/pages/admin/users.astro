@@ -1,0 +1,284 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+import { hashPassword } from '../../lib/admin-auth';
+
+// Vérifier que l'utilisateur est super admin
+const sessionCookie = Astro.cookies.get('admin_session');
+let currentAdmin: any = null;
+
+if (sessionCookie) {
+  try {
+    currentAdmin = JSON.parse(sessionCookie.value);
+  } catch (error) {
+    return Astro.redirect('/admin/login');
+  }
+}
+
+// Rediriger si pas super admin
+if (!currentAdmin || !currentAdmin.is_super_admin) {
+  return Astro.redirect('/admin/dashboard');
+}
+
+let errorMessage = '';
+let successMessage = '';
+
+// Traitement du formulaire de création d'admin
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const action = formData.get('action')?.toString();
+
+    if (action === 'create') {
+      const email = formData.get('email')?.toString() || '';
+      const password = formData.get('password')?.toString() || '';
+      const fullName = formData.get('full_name')?.toString() || '';
+
+      // Validation
+      if (!email || !password || !fullName) {
+        errorMessage = 'Tous les champs sont requis';
+      } else if (password.length < 8) {
+        errorMessage = 'Le mot de passe doit contenir au moins 8 caractères';
+      } else {
+        // Vérifier si l'admin existe déjà
+        const { data: existingAdmin } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('email', email.toLowerCase())
+          .maybeSingle();
+
+        if (existingAdmin) {
+          errorMessage = 'Un admin avec cet email existe déjà';
+        } else {
+          // Créer le nouvel admin (non super admin par défaut)
+          const { error } = await supabase
+            .from('admins')
+            .insert({
+              email: email.toLowerCase(),
+              password_hash: hashPassword(password),
+              full_name: fullName,
+              is_super_admin: false,
+              is_active: true
+            });
+
+          if (error) {
+            errorMessage = `Erreur lors de la création: ${error.message}`;
+          } else {
+            successMessage = `Admin ${email} créé avec succès`;
+          }
+        }
+      }
+    } else if (action === 'toggle_status') {
+      const adminId = formData.get('admin_id')?.toString();
+      const currentStatus = formData.get('current_status') === 'true';
+
+      if (adminId) {
+        const { error } = await supabase
+          .from('admins')
+          .update({ is_active: !currentStatus })
+          .eq('id', adminId);
+
+        if (error) {
+          errorMessage = `Erreur lors de la mise à jour: ${error.message}`;
+        } else {
+          successMessage = 'Statut mis à jour avec succès';
+        }
+      }
+    }
+  } catch (error) {
+    errorMessage = 'Erreur lors du traitement de la requête';
+  }
+}
+
+// Récupérer la liste des admins
+const { data: admins, error: adminsError } = await supabase
+  .from('admins')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+if (adminsError) {
+  errorMessage = `Erreur lors de la récupération des admins: ${adminsError.message}`;
+}
+---
+
+<AdminLayout title="Gestion des Utilisateurs - Admin">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- En-tête -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+        Gestion des Utilisateurs Admin
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400">
+        Créer et gérer les comptes administrateurs
+      </p>
+    </div>
+
+    <!-- Messages -->
+    {errorMessage && (
+      <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <p class="text-red-800 dark:text-red-200">{errorMessage}</p>
+      </div>
+    )}
+
+    {successMessage && (
+      <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <p class="text-green-800 dark:text-green-200">{successMessage}</p>
+      </div>
+    )}
+
+    <!-- Formulaire de création -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+        Créer un nouvel administrateur
+      </h2>
+      
+      <form method="POST" class="space-y-4">
+        <input type="hidden" name="action" value="create" />
+        
+        <div>
+          <label for="full_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Nom complet
+          </label>
+          <input
+            type="text"
+            id="full_name"
+            name="full_name"
+            required
+            class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-900 dark:text-white"
+            placeholder="Jean Dupont"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-900 dark:text-white"
+            placeholder="admin@geekspatrol.com"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Mot de passe (min. 8 caractères)
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            minlength="8"
+            class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p class="text-sm text-blue-800 dark:text-blue-200">
+            <strong>Permissions par défaut :</strong> Les admins créés peuvent créer et modifier des articles, mais ne peuvent pas les approuver ou les supprimer. Seul le super admin peut effectuer ces actions.
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+        >
+          Créer l'administrateur
+        </button>
+      </form>
+    </div>
+
+    <!-- Liste des admins -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">
+          Administrateurs existants ({admins?.length || 0})
+        </h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50 dark:bg-slate-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Nom
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Email
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Rôle
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Statut
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            {admins && admins.map((admin) => (
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-slate-900 dark:text-white">
+                    {admin.full_name}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-slate-600 dark:text-slate-400">
+                    {admin.email}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {admin.is_super_admin ? (
+                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                      Super Admin
+                    </span>
+                  ) : (
+                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                      Admin
+                    </span>
+                  )}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {admin.is_active ? (
+                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                      Actif
+                    </span>
+                  ) : (
+                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                      Inactif
+                    </span>
+                  )}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  {!admin.is_super_admin && (
+                    <form method="POST" class="inline">
+                      <input type="hidden" name="action" value="toggle_status" />
+                      <input type="hidden" name="admin_id" value={admin.id} />
+                      <input type="hidden" name="current_status" value={admin.is_active.toString()} />
+                      <button
+                        type="submit"
+                        class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                      >
+                        {admin.is_active ? 'Désactiver' : 'Activer'}
+                      </button>
+                    </form>
+                  )}
+                  {admin.is_super_admin && (
+                    <span class="text-slate-400 dark:text-slate-600">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

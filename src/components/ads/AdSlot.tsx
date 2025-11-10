@@ -28,7 +28,7 @@ export function AdSlot({
       try {
         ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       } catch (err) {
-        console.error('AdSense error:', err);
+        // Silently ignore AdSense errors
       }
     }
   }, []);

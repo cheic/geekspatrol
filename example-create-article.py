@@ -6,11 +6,12 @@ Ce script Python montre comment créer un article avec toutes les options
 
 import requests
 import json
+import os
 from datetime import datetime
 
 # Configuration
 API_URL = "http://localhost:4321"  # Changez pour votre URL de production
-API_KEY = "6T941FIFyj/zyAzApBD0Qw/hIejqUGxZo2S6GVQXYQ4="  # Votre clé API
+API_KEY = os.environ.get("API_KEY", "YOUR_API_KEY_HERE")  # Définir la clé API via variable d'environnement
 
 def get_categories():
     """Récupère la liste des catégories disponibles"""

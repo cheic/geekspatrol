@@ -171,6 +171,13 @@ const currentUrl = Astro.url.pathname;
     // Simple search functionality (to be enhanced later)
     let searchTimeout: ReturnType<typeof setTimeout>;
     
+    // Fonction pour échapper le HTML et prévenir les attaques XSS
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
     searchInput?.addEventListener('input', (e) => {
       const query = (e.target as HTMLInputElement).value.trim();
       const resultsDiv = document.getElementById('search-results');
@@ -218,7 +225,7 @@ const currentUrl = Astro.url.pathname;
             resultsDiv.innerHTML = `
               <div class="text-center py-12">
                 <i class="fas fa-search w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600"></i>
-                <p class="text-slate-500 dark:text-slate-400">Aucun résultat trouvé pour "${query}"</p>
+                <p class="text-slate-500 dark:text-slate-400">Aucun résultat trouvé pour "${escapeHtml(query)}"</p>
                 <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Essayez avec d'autres mots-clés</p>
               </div>
             `;
@@ -229,20 +236,20 @@ const currentUrl = Astro.url.pathname;
             <div class="space-y-3">
               <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">${results.length} résultat${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}</p>
               ${results.map((article: any) => `
-                <a href="${article.url}" class="block p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                <a href="${escapeHtml(article.url)}" class="block p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
                   <div class="flex items-start gap-3">
                     ${article.cover_image_path 
-                      ? `<img src="${article.cover_image_path}" alt="${article.title}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" />`
+                      ? `<img src="${escapeHtml(article.cover_image_path)}" alt="${escapeHtml(article.title)}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" />`
                       : `<div class="w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                            <i class="fas fa-file-alt w-8 h-8 text-white opacity-80"></i>
                          </div>`
                     }
                     <div class="flex-1 min-w-0">
-                      <h3 class="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">${article.title}</h3>
-                      ${article.excerpt ? `<p class="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">${article.excerpt}</p>` : ''}
+                      <h3 class="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">${escapeHtml(article.title)}</h3>
+                      ${article.excerpt ? `<p class="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">${escapeHtml(article.excerpt)}</p>` : ''}
                       <div class="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        ${article.category ? `<span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded">${article.category}</span>` : ''}
-                        ${article.reading_time ? `<span>${article.reading_time} min</span>` : ''}
+                        ${article.category ? `<span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded">${escapeHtml(article.category)}</span>` : ''}
+                        ${article.reading_time ? `<span>${escapeHtml(String(article.reading_time))} min</span>` : ''}
                       </div>
                     </div>
                   </div>

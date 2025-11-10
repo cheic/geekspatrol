@@ -18,14 +18,12 @@ export async function POST({ request }: { request: Request }) {
     });
 
     if (error) {
-      console.error('Erreur lors de la création du compte:', error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    console.log('Compte admin créé avec succès:', data.user?.email);
 
     return new Response(JSON.stringify({
       success: true,
@@ -37,7 +35,6 @@ export async function POST({ request }: { request: Request }) {
     });
 
   } catch (error) {
-    console.error('Erreur serveur:', error);
     return new Response(JSON.stringify({ error: 'Erreur serveur' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

@@ -1,5 +1,6 @@
 ---
 // Logique de traitement du formulaire de connexion
+import '../../styles/global.css';
 import { loginAdmin } from '../../lib/admin-auth';
 
 let errorMessage = '';
@@ -9,12 +10,8 @@ if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
 
-    console.log('Tentative de connexion admin');
-
     // Utilisation de la fonction loginAdmin personnalisée
     const adminUser = await loginAdmin(formData);
-
-    console.log('Connexion admin réussie pour:', adminUser.email);
 
     // Créer un cookie de session avec les données de l'admin
     const sessionData = {
@@ -29,6 +26,7 @@ if (Astro.request.method === 'POST') {
     Astro.cookies.set('admin_session', JSON.stringify(sessionData), {
       path: '/',
       httpOnly: true,
+      secure: import.meta.env.PROD, // Activer secure uniquement en production (HTTPS)
       sameSite: 'lax',
       maxAge: 86400 // 24h
     });
@@ -38,7 +36,6 @@ if (Astro.request.method === 'POST') {
 
   } catch (error) {
     errorMessage = (error as Error).message;
-    console.error('Erreur de connexion admin:', error);
   }
 }
 ---
@@ -50,12 +47,6 @@ if (Astro.request.method === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Espace Admin - Geeks Patrol</title>
-  <style>
-    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/base.css');
-    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/components.css');
-    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/utilities.css');
-  </style>
-  <link rel="stylesheet" href="/src/styles/global.css">
   <style>
     /* Styles pour les inputs focus */
     input:focus {

@@ -5,7 +5,7 @@
 
 # Configuration
 API_URL="http://localhost:4321"  # Changez pour votre URL de production
-API_KEY="6T941FIFyj/zyAzApBD0Qw/hIejqUGxZo2S6GVQXYQ4="  # Votre clé API
+API_KEY="${API_KEY:-YOUR_API_KEY_HERE}"  # Définir la clé API via variable d'environnement
 
 echo "📝 Création d'un article via l'API GeeksPatrol"
 echo "=============================================="

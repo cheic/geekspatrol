@@ -37,7 +37,6 @@ export const GET: APIRoute = async ({ url }) => {
       .limit(10);
 
     if (error) {
-      console.error('Supabase search error:', error);
       return new Response(JSON.stringify([]), {
         status: 200,
         headers: {
@@ -71,7 +70,6 @@ export const GET: APIRoute = async ({ url }) => {
       }
     });
   } catch (error) {
-    console.error('Search error:', error);
     return new Response(JSON.stringify([]), {
       status: 500,
       headers: {

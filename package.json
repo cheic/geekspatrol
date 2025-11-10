@@ -1,5 +1,6 @@
 {
   "name": "geeks-patrol-astro",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,14 +11,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^8.3.3",
-    "@astrojs/react": "^3.6.2",
+    "@astrojs/node": "^9.5.0",
+    "@astrojs/react": "^3.6.3",
     "@astrojs/tailwind": "^5.1.1",
-    "@astrojs/vercel": "^7.8.1",
+    "@astrojs/vercel": "^9.0.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@supabase/supabase-js": "^2.58.0",
     "@uiw/react-md-editor": "^4.0.8",
-    "astro": "^4.16.6",
+    "astro": "^5.15.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
