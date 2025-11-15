@@ -147,16 +147,11 @@ const pageNumbers = getPageNumbers();
   </div>
 
   <!-- Grille d'articles récents -->
-  <section class="container mx-auto px-4 py-16">
-    <div class="flex justify-between items-center mb-8">
+  <section class="container mx-auto px-4 py-20">
+    <div class="flex justify-between items-center mb-4 mt-8">
       <h2 class="text-3xl font-bold text-slate-900 dark:text-white">
         Derniers articles
       </h2>
-      {totalArticles > 0 && (
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-          {totalArticles} article{totalArticles > 1 ? 's' : ''}
-        </p>
-      )}
     </div>
 
     {regularArticles.length > 0 ? (
