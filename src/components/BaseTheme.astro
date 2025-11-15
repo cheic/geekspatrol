@@ -8,18 +8,65 @@ export interface Props {
 
 const { theme = 'auto' } = Astro.props;
 
-// Déterminer la classe du thème
-const themeClass = theme === 'auto' ? 'dark' : theme;
+// Calculer la classe initiale côté serveur pour éviter le flash
+const getInitialThemeClass = () => {
+  // Pour SSR, on ne peut pas accéder à localStorage, donc on utilise 'auto' par défaut
+  // qui sera corrigé par JavaScript immédiatement
+  return '';
+};
+const themeClass = getInitialThemeClass();
 ---
 
-<!-- Script pour gérer le thème automatiquement -->
+<!-- Script inline pour appliquer le thème immédiatement avant le rendu -->
+<script is:inline>
+  (function() {
+    try {
+      // Fonction pour obtenir le thème sauvegardé
+      function getSavedTheme() {
+        const saved = localStorage.getItem('theme');
+        return saved || 'auto';
+      }
+
+      // Fonction pour appliquer le thème
+      function applyThemeImmediate(theme) {
+        const html = document.documentElement;
+
+        if (theme === 'auto') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // Supprimer les classes existantes
+        html.classList.remove('light', 'dark');
+
+        // Appliquer le nouveau thème
+        html.classList.add(theme);
+      }
+
+      // Appliquer le thème immédiatement
+      const savedTheme = getSavedTheme();
+      applyThemeImmediate(savedTheme);
+
+      // Sauvegarder pour référence future
+      window.__themeApplied = true;
+      window.__currentTheme = savedTheme;
+
+    } catch (e) {
+      // Fallback en cas d'erreur
+      console.warn('Erreur lors de l\'application du thème:', e);
+    }
+  })();
+</script>
+
+<!-- Script pour gérer les changements dynamiques -->
 <script>
   // Importer les fonctions de thème
   import { applyTheme, getCurrentTheme } from '../config/theme';
 
-  // Appliquer le thème au chargement
-  const savedTheme = getCurrentTheme();
-  applyTheme(savedTheme);
+  // Si le thème n'a pas encore été appliqué par le script inline
+  if (!(window as any).__themeApplied) {
+    const savedTheme = getCurrentTheme();
+    applyTheme(savedTheme);
+  }
 
   // Écouter les changements de préférence système
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {

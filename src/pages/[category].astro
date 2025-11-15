@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleCard from '../components/ArticleCard';
 import Breadcrumb from '../components/Breadcrumb.astro';
+import { LazyAdSlot } from '../components/ads/LazyAdSlot';
 import { supabase } from '../lib/supabase';
 import { mapCategorySlug, CATEGORY_DISPLAY } from '../lib/slug';
 
@@ -173,12 +174,35 @@ const breadcrumbItems = [
       )}
     </div>
 
+    <!-- Publicité Google AdSense - Bandeau supérieur -->
+    <div class="mb-12">
+      <LazyAdSlot slot="category-top-banner" format="horizontal" />
+    </div>
+
     {categoryArticles.length > 0 ? (
       <>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {categoryArticles.map((article: any) => (
-            <ArticleCard article={article} client:load />
-          ))}
+          {categoryArticles.map((article: any, index: number) => {
+            // Insérer une pub après chaque 6 articles
+            const showAd = (index + 1) % 6 === 0;
+            
+            return (
+              <>
+                <ArticleCard article={article} client:load />
+                
+                {showAd && (
+                  <div class="md:col-span-2 lg:col-span-3">
+                    <LazyAdSlot slot={`category-feed-ad-${index}`} format="horizontal" />
+                  </div>
+                )}
+              </>
+            );
+          })}
+        </div>
+
+        {/* Publicité Google AdSense - Bandeau inférieur */}
+        <div class="mb-12">
+          <LazyAdSlot slot="category-bottom-banner" format="horizontal" />
         </div>
 
         {/* Pagination */}
