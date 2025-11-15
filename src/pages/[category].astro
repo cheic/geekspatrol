@@ -3,33 +3,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleCard from '../components/ArticleCard';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import { supabase } from '../lib/supabase';
+import { mapCategorySlug, CATEGORY_DISPLAY } from '../lib/slug';
 
 // Récupérer le paramètre de catégorie depuis l'URL
 const { category } = Astro.params;
 
 // Map des catégories avec leurs informations
-const categoryInfo: Record<string, { title: string; description: string; slug: string }> = {
-  'ia': {
-    title: 'Intelligence Artificielle',
-    description: 'IA, machine learning et technologies émergentes',
-    slug: 'ia'
-  },
-  'mobile': {
-    title: 'Mobile',
-    description: 'Smartphones, tablettes et applications',
-    slug: 'mobile'
-  },
-  'tech': {
-    title: 'Tech & Gadgets',
-    description: 'Hardware, logiciels, innovations et voitures électriques',
-    slug: 'tech'
-  }
-};
+const categoryInfo: Record<string, { title: string; description: string; slug: string }> = Object.fromEntries(
+  Object.entries(CATEGORY_DISPLAY).map(([slug, info]) => [slug, { ...info, slug }])
+);
 
 // Vérifier si la catégorie existe
 const currentCategory = categoryInfo[category || ''];
 if (!currentCategory) {
-  return Astro.redirect('/404', 301);
+  // Retourne directement un statut 404 sans redirection supplémentaire
+  return new Response('Catégorie introuvable', { status: 404 });
 }
 
 // Pagination

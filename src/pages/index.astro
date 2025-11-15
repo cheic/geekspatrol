@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleCard from '../components/ArticleCard.tsx';
 import { AdSlot } from '../components/ads/AdSlot.tsx';
+import { LazyAdSlot } from '../components/ads/LazyAdSlot';
 import { supabase } from '../lib/supabase';
 
 // Pagination
@@ -143,7 +144,7 @@ const pageNumbers = getPageNumbers();
 
   <!-- Publicité Google AdSense - Bandeau -->
   <div class="container mx-auto px-4 py-12">
-    <AdSlot slot="top-banner" format="horizontal" />
+    <LazyAdSlot slot="top-banner" format="horizontal" />
   </div>
 
   <!-- Grille d'articles récents -->
@@ -170,7 +171,7 @@ const pageNumbers = getPageNumbers();
                 
                 {showAd && (
                   <div class="md:col-span-2 lg:col-span-3">
-                    <AdSlot slot={`feed-ad-${index}`} format="horizontal" />
+                    <LazyAdSlot slot={`feed-ad-${index}`} format="horizontal" />
                   </div>
                 )}
               </>
@@ -253,7 +254,7 @@ const pageNumbers = getPageNumbers();
 
   <!-- Publicité Google AdSense - Bas de page -->
   <div class="container mx-auto px-4 py-12">
-    <AdSlot slot="bottom-banner" format="horizontal" />
+    <LazyAdSlot slot="bottom-banner" format="horizontal" />
   </div>
 
   <!-- CTA Section -->

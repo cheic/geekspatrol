@@ -1,8 +1,10 @@
 ---
 // src/layouts/ArticleLayout.astro
 import BaseLayout from './BaseLayout.astro';
+import { mapCategorySlug } from '../lib/slug';
 import { supabase } from '../lib/supabase';
 import { AdSlot } from '../components/ads/AdSlot.tsx';
+import { LazyAdSlot } from '../components/ads/LazyAdSlot';
 import Breadcrumb from '../components/Breadcrumb.astro';
 
 export interface Props {
@@ -72,19 +74,7 @@ if (firstCategory) {
 
 // Breadcrumb items - récupérer la première catégorie
 // Fonction pour mapper les slugs de base de données vers les slugs d'URL
-function mapCategorySlug(dbSlug: string): string {
-  const slugMapping: Record<string, string> = {
-    'ia-machine-learning': 'ia',
-    'intelligence-artificielle': 'ia',
-    'mobile': 'mobile',
-    'smartphones': 'mobile',
-    'tech-gadgets': 'tech',
-    'tech': 'tech',
-    'hardware': 'tech'
-  };
-
-  return slugMapping[dbSlug] || dbSlug;
-}
+// (mapping centralisé déplacé vers lib/slug.ts)
 
 const breadcrumbItems = firstCategory
   ? [
@@ -168,7 +158,7 @@ const structuredData = {
           <div class="sticky top-24 space-y-8">
             <!-- Ad Card 1 -->
             <div class="w-full flex justify-center">
-              <AdSlot
+              <LazyAdSlot
                 slot="1234567890"
                 format="vertical"
                 style={{ width: '160px', height: '600px' }}
@@ -179,7 +169,7 @@ const structuredData = {
             
             <!-- Ad Card 2 -->
             <div class="w-full flex justify-center">
-              <AdSlot
+              <LazyAdSlot
                 slot="2345678901"
                 format="rectangle"
                 style={{ width: '200px', height: '200px' }}
@@ -195,7 +185,7 @@ const structuredData = {
           
           <!-- Pub en haut (mobile uniquement) -->
           <div class="mb-8 flex justify-center lg:hidden">
-            <AdSlot
+            <LazyAdSlot
               slot="1234567890"
               format="horizontal"
               style={{ width: '320px', height: '100px' }}
@@ -258,7 +248,7 @@ const structuredData = {
         
         <!-- Pub au milieu du contenu -->
         <div class="my-6 flex justify-center">
-          <AdSlot 
+          <LazyAdSlot 
             slot="0987654321" 
             format="rectangle" 
             style={{ width: '300px', height: '250px' }} 
@@ -311,7 +301,7 @@ const structuredData = {
 
         <!-- Pub en bas (mobile uniquement) -->
         <div class="mb-8 flex justify-center lg:hidden">
-          <AdSlot 
+          <LazyAdSlot 
             slot="1357924680" 
             format="horizontal" 
             style={{ width: '320px', height: '100px' }} 
@@ -404,7 +394,7 @@ const structuredData = {
 
             {/* Pub sidebar droite (desktop uniquement) */}
             <div class="hidden xl:block">
-              <AdSlot
+              <LazyAdSlot
                 slot="3456789012"
                 format="rectangle"
                 style={{ width: '300px', height: '250px' }}

@@ -19,7 +19,7 @@ const { data: article, error } = await supabase
 
 // Si l'article n'existe pas, rediriger vers 404
 if (error || !article) {
-  return Astro.redirect('/404', 301);
+  return new Response('Article introuvable', { status: 404 });
 }
 
 // Vérifier que l'article appartient bien à la catégorie demandée
@@ -28,7 +28,7 @@ const belongsToCategory = article.article_categories?.some((ac: any) =>
 );
 
 if (!belongsToCategory) {
-  return Astro.redirect('/404', 301);
+  return new Response('Article hors catégorie', { status: 404 });
 }
 
 // Analytics tracking

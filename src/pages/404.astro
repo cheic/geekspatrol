@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { supabase } from '../lib/supabase';
+import { mapCategorySlug, CATEGORY_DISPLAY } from '../lib/slug';
+
+// Charger quelques articles récents
+const { data: recentArticles } = await supabase
+  .from('articles')
+  .select(`id, title, slug, created_at, article_categories(category:categories(slug,name))`)
+  .eq('status', 'approved')
+  .order('created_at', { ascending: false })
+  .limit(6);
+---
+<BaseLayout title="Page non trouvée - Geeks Patrol" description="La ressource demandée est introuvable">
+  <section class="container mx-auto px-4 py-20">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold mb-4" style="color: var(--text-primary);">404</h1>
+        <p class="text-lg mb-6" style="color: var(--text-secondary);">
+          Désolé, la page que vous cherchez n'existe pas ou a été déplacée.
+        </p>
+        <a href="/" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors mb-4"
+           style="background: var(--accent); color: #fff;">
+          Retour à l'accueil
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>      {/* Catégories principales affichées toujours */}
+      <div class="grid sm:grid-cols-3 gap-6 mb-12">
+        {Object.entries(CATEGORY_DISPLAY).map(([slug, info]) => (
+          <a href={`/${slug}`} class="p-5 rounded-lg transition-colors"
+             style="background: var(--bg-secondary); border:1px solid var(--border-light);">
+            <h3 class="font-semibold mb-2" style="color: var(--text-primary);">{info.title}</h3>
+            <p class="text-sm" style="color: var(--text-secondary);">{info.description}</p>
+          </a>
+        ))}
+      </div>
+
+      {/* Articles récents affichés toujours */}
+      {recentArticles && recentArticles.length > 0 && (
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold mb-4" style="color: var(--text-primary);">Articles récents</h2>
+          <div class="grid md:grid-cols-3 gap-6">
+            {recentArticles.map((a: any) => {
+              const cSlug = a.article_categories?.[0]?.category?.slug;
+              const mapped = cSlug ? mapCategorySlug(cSlug) : '';
+              const url = mapped ? `/${mapped}/${a.slug}` : `/${a.slug}`;
+              return (
+                <a href={url} class="block p-4 rounded-lg transition-colors"
+                   style="background: var(--bg-secondary); border:1px solid var(--border-light);">
+                  <h3 class="text-sm font-semibold mb-2 line-clamp-2" style="color: var(--text-primary);">{a.title}</h3>
+                  <time class="text-xs" style="color: var(--text-secondary);" datetime={a.created_at}>
+                    {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                  </time>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
+
+  {import.meta.env.PUBLIC_GA_MEASUREMENT_ID && (
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);} 
+      gtag('event', 'view_404', { page_path: window.location.pathname });
+    </script>
+  )}
+</BaseLayout>
