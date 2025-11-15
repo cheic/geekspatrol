@@ -223,6 +223,10 @@ const structuredData = {
         </h1>
         
         <div class="flex flex-wrap items-center gap-4 mb-6" style="color: var(--text-secondary);">
+          {article.reading_time && (
+            <span>{article.reading_time} min de lecture</span>
+          )}
+          
           <time datetime={publishedTime}>
             {new Date(article.created_at).toLocaleDateString('fr-FR', {
               year: 'numeric',
@@ -230,10 +234,6 @@ const structuredData = {
               day: 'numeric'
             })}
           </time>
-          
-          {article.reading_time && (
-            <span>{article.reading_time} min de lecture</span>
-          )}
           
           {article.author && (
             <span>Par {article.author}</span>
@@ -338,17 +338,20 @@ const structuredData = {
           <div class="sticky top-24 space-y-6">
             {/* Articles de la même catégorie */}
             {sameCategoryArticles.length > 0 && (
-              <div class="bg-slate-900 dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-800 dark:border-slate-700">
+              <div class="rounded-xl shadow-lg overflow-hidden" style="background: var(--bg-primary); border: 1px solid var(--border-light);">
                 <div class="px-4 py-3 flex items-center justify-center">
-                  <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wide text-center">
+                  <h3 class="text-sm font-bold uppercase tracking-wide text-center" style="color: var(--accent);">
                     {firstCategory?.name}
                   </h3>
                 </div>
-                <div class="divide-y divide-slate-800 dark:divide-slate-700">
+                <div style="border-top: 1px solid var(--border-light);">
                   {sameCategoryArticles.map((relatedArticle: any) => (
                     <a 
                       href={getArticleUrl(relatedArticle)} 
-                      class="block group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      class="block group transition-colors"
+                      style="border-bottom: 1px solid var(--border-light);"
+                      onmouseenter="this.style.background='var(--bg-secondary)'"
+                      onmouseleave="this.style.background='transparent'"
                     >
                       <div class="flex gap-3 p-4">
                         {relatedArticle.cover_image_path ? (
@@ -363,14 +366,22 @@ const structuredData = {
                           </div>
                         )}
                         <div class="flex-1 min-w-0">
-                          <h4 class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-3 leading-snug mb-1">
+                          <h4 class="text-sm font-semibold transition-colors line-clamp-3 leading-snug mb-1" style="color: var(--text-primary);">
                             {relatedArticle.title}
                           </h4>
-                          {relatedArticle.reading_time && (
-                            <span class="text-xs text-slate-400 dark:text-slate-300 font-medium">
-                              {relatedArticle.reading_time} min de lecture
-                            </span>
-                          )}
+                          <div class="flex items-center gap-2">
+                            {relatedArticle.reading_time && (
+                              <span class="text-xs font-medium" style="color: var(--text-secondary);">
+                                {relatedArticle.reading_time} min
+                              </span>
+                            )}
+                            <time class="text-xs font-medium ml-auto" style="color: var(--text-secondary);" datetime={relatedArticle.created_at}>
+                              {new Date(relatedArticle.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'short'
+                              })}
+                            </time>
+                          </div>
                         </div>
                       </div>
                     </a>
@@ -378,10 +389,11 @@ const structuredData = {
                 </div>
                 
                 {firstCategory && (
-                  <div class="bg-slate-900 dark:bg-slate-900 px-4 py-3">
+                  <div class="px-4 py-3" style="background: var(--bg-secondary);">
                     <a 
-                      href={`/${firstCategory.slug}`}
-                      class="block text-center text-sm font-bold text-indigo-400 dark:text-indigo-300 hover:text-indigo-200 dark:hover:text-white transition-colors tracking-wide"
+                      href={`/${mapCategorySlug(firstCategory.slug)}`}
+                      class="block text-center text-sm font-bold transition-colors tracking-wide"
+                      style="color: var(--accent);"
                     >
                       Voir tous les articles →
                     </a>
